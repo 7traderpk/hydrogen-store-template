@@ -1,0 +1,27 @@
+# Deployment template for running this storefront on a Docker host behind a
+# Traefik reverse proxy (the setup this template was proven against for
+# Inverterzone). Copy this file to `docker-compose.yml` in the store's own
+# deployment directory (NOT this repo - see SETUP.md) and replace every
+# `<STORE_NAME>` and `<STORE_DOMAIN>` placeholder.
+#
+# Assumes an external Docker network named `traefik-public` that a Traefik
+# instance is already attached to, with a `letsencrypt` certificate resolver
+# configured (see Traefik's own docker-compose.yml on the host).
+
+services:
+  <STORE_NAME>:
+    build: ./app
+    restart: always
+    env_file: .env
+    networks:
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - 'traefik.http.routers.<STORE_NAME>.rule=Host(`<STORE_DOMAIN>`)'
+      - traefik.http.routers.<STORE_NAME>.entrypoints=websecure
+      - traefik.http.routers.<STORE_NAME>.tls.certresolver=letsencrypt
+      - traefik.http.services.<STORE_NAME>.loadbalancer.server.port=3000
+
+networks:
+  traefik-public:
+    external: true
