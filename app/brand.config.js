@@ -7,6 +7,11 @@
  * app/assets/logo.png) - see SETUP.md for the full customization checklist.
  */
 
+import demoIcon1 from '~/assets/feature-icon-1.png';
+import demoIcon2 from '~/assets/feature-icon-2.png';
+import demoIcon3 from '~/assets/feature-icon-3.png';
+import demoIcon4 from '~/assets/feature-icon-4.png';
+
 export const BRAND_NAME = 'My Store';
 
 /** Google Fonts stylesheet URL loaded in app/root.jsx. */
@@ -34,7 +39,10 @@ export const FEATURED_PRODUCTS_HEADING = 'Featured Products';
 /**
  * Homepage feature-highlight blocks. See
  * app/components/sections/ImageWithText.jsx. `image` is optional - omit it
- * to render the block as text-only.
+ * to render the block as text-only. The four icons here
+ * (app/assets/feature-icon-*.png) are placeholder demo shapes generated for
+ * this template - swap for real icons/photos, or delete them and drop the
+ * `image` key to go text-only.
  */
 export const FEATURE_HIGHLIGHTS_HEADING = 'Why Shop With Us';
 
@@ -42,17 +50,21 @@ export const FEATURE_HIGHLIGHTS = [
   {
     title: 'Feature One',
     text: 'Replace with real copy about this store\'s products or service.',
+    image: {url: demoIcon1},
   },
   {
     title: 'Feature Two',
     text: 'Replace with real copy about this store\'s products or service.',
+    image: {url: demoIcon2},
   },
   {
     title: 'Feature Three',
     text: 'Replace with real copy about this store\'s products or service.',
+    image: {url: demoIcon3},
   },
   {
     title: 'Feature Four',
     text: 'Replace with real copy about this store\'s products or service.',
+    image: {url: demoIcon4},
   },
 ];
