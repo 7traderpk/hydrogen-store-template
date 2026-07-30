@@ -1,0 +1,29 @@
+name: Deploy lite.digilog.pk
+
+# Only fires on this store's own branch - other stores on this shared
+# template repo use their own branches/main and are unaffected.
+on:
+  push:
+    branches: [lite-digilog-pk]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up deploy key
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 72.60.237.198 >> ~/.ssh/known_hosts
+
+      # No command is passed to ssh - the VPS's authorized_keys entry for
+      # this key has a forced `command=` that runs the actual deploy
+      # sequence (git pull + docker compose build + up -d) regardless of
+      # what's requested here. This is deliberate belt-and-suspenders: even
+      # if this workflow file were changed to request something else, the
+      # key still can't do anything beyond that one forced command.
+      - name: Deploy (git pull + docker compose build && up -d on the VPS)
+        run: |
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            root@72.60.237.198
