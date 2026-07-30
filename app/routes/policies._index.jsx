@@ -1,4 +1,15 @@
 import {useLoaderData, Link} from 'react-router';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
+
+/**
+ * @type {Route.MetaFunction}
+ */
+export const meta = () =>
+  buildMeta({
+    title: 'Policies',
+    description: 'Our store policies, including shipping, returns, and privacy.',
+    url: `${SITE_URL}/policies`,
+  });
 
 /**
  * @param {Route.LoaderArgs}

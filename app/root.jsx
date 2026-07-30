@@ -11,8 +11,12 @@ import {
 } from 'react-router';
 import favicon from '~/assets/favicon.svg';
 import logo from '~/assets/logo.png';
-import {FONT_GOOGLE_URL} from '~/brand.config';
+import {getDesignConfig, DEFAULT_DESIGN_CONFIG} from '~/lib/designConfig';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {SITE_URL} from '~/lib/seo/metadata';
+import {JsonLd} from '~/components/seo/JsonLd';
+import {organization} from '~/lib/seo/schema/organization';
+import {website} from '~/lib/seo/schema/website';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import tailwindCss from './styles/tailwind.css?url';
@@ -66,10 +70,9 @@ export function links() {
       href: 'https://fonts.gstatic.com',
       crossOrigin: 'anonymous',
     },
-    {
-      rel: 'stylesheet',
-      href: FONT_GOOGLE_URL,
-    },
+    // The font stylesheet is rendered dynamically in <Layout> instead of
+    // here, since its URL now comes from the design-dashboard-editable
+    // config (loader data isn't available in this static links() list).
     {rel: 'icon', type: 'image/png', href: logo},
     {rel: 'icon', type: 'image/svg+xml', href: favicon},
   ];
@@ -87,9 +90,12 @@ export async function loader(args) {
 
   const {storefront, env} = args.context;
 
+  const designConfig = await getDesignConfig(storefront);
+
   return {
     ...deferredData,
     ...criticalData,
+    designConfig,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     shop: getShopAnalytics({
       storefront,
@@ -161,6 +167,14 @@ function loadDeferredData({context}) {
  */
 export function Layout({children}) {
   const nonce = useNonce();
+  // useRouteLoaderData, not the loader return value directly - Layout also
+  // wraps error-boundary rendering, where the root loader may not have run,
+  // so this must tolerate `data` being undefined.
+  const data = useRouteLoaderData('root');
+  const designConfig = data?.designConfig || DEFAULT_DESIGN_CONFIG;
+  const {colors} = designConfig;
+  const shop = data?.header?.shop;
+  const brandName = designConfig.brandName || shop?.name || 'Digilog';
 
   return (
     <html lang="en">
@@ -170,8 +184,31 @@ export function Layout({children}) {
         <link rel="stylesheet" href={tailwindCss}></link>
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
+        <link rel="stylesheet" href={designConfig.fontGoogleUrl} />
+        <style
+          // Design-dashboard-editable brand colors, overriding the
+          // defaults baked into app.css's :root block.
+          dangerouslySetInnerHTML={{
+            __html: `:root{--color-primary:${colors.primary};--color-primary-dark:${colors.primaryDark};--color-accent:${colors.accent}}`,
+          }}
+        />
         <Meta />
         <Links />
+        {/* Sitewide Organization + WebSite JSON-LD - rendered on every page
+            regardless of route, since Google recommends declaring these once
+            per site rather than per-page. */}
+        <JsonLd
+          data={[
+            organization({
+              name: brandName,
+              description: shop?.description,
+              url: SITE_URL,
+              logoUrl: designConfig.logoUrl || shop?.brand?.logo?.image?.url,
+              socialLinks: designConfig.socialLinks,
+            }),
+            website({name: brandName, url: SITE_URL}),
+          ]}
+        />
       </head>
       <body>
         {children}

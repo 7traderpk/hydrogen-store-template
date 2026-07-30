@@ -1,3 +1,4 @@
+import {useState} from 'react';
 import {Link, useNavigate} from 'react-router';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
@@ -11,6 +12,7 @@ import {useAside} from './Aside';
 export function ProductForm({productOptions, selectedVariant}) {
   const navigate = useNavigate();
   const {open} = useAside();
+  const [quantity, setQuantity] = useState(1);
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -93,25 +95,56 @@ export function ProductForm({productOptions, selectedVariant}) {
           </div>
         );
       })}
-      <AddToCartButton
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
-        onClick={() => {
-          open('cart');
-        }}
-        lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: 1,
-                  selectedVariant,
-                },
-              ]
-            : []
-        }
-      >
-        {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
-      </AddToCartButton>
+      <div className="product-form-buy-row">
+        <div className="quantity-selector" role="group" aria-label="Quantity">
+          <button
+            type="button"
+            className="quantity-selector-btn"
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            aria-label="Decrease quantity"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            min="1"
+            className="quantity-selector-input"
+            value={quantity}
+            onChange={(e) => {
+              const next = parseInt(e.target.value, 10);
+              setQuantity(Number.isFinite(next) && next > 0 ? next : 1);
+            }}
+            aria-label="Quantity"
+          />
+          <button
+            type="button"
+            className="quantity-selector-btn"
+            onClick={() => setQuantity((q) => q + 1)}
+            aria-label="Increase quantity"
+          >
+            +
+          </button>
+        </div>
+        <AddToCartButton
+          disabled={!selectedVariant || !selectedVariant.availableForSale}
+          onClick={() => {
+            open('cart');
+          }}
+          lines={
+            selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity,
+                    selectedVariant,
+                  },
+                ]
+              : []
+          }
+        >
+          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+        </AddToCartButton>
+      </div>
     </div>
   );
 }

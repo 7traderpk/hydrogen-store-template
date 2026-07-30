@@ -1,13 +1,17 @@
 import {Link, useLoaderData} from 'react-router';
 import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 
 /**
  * @type {Route.MetaFunction}
  */
-export const meta = () => {
-  return [{title: `Hydrogen | Blogs`}];
-};
+export const meta = () =>
+  buildMeta({
+    title: 'Blog',
+    description: 'Guides, tutorials, and news.',
+    url: `${SITE_URL}/blogs`,
+  });
 
 /**
  * @param {Route.LoaderArgs} args

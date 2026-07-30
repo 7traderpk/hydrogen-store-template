@@ -2,13 +2,17 @@ import {useLoaderData} from 'react-router';
 import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 
 /**
  * @type {Route.MetaFunction}
  */
-export const meta = () => {
-  return [{title: `Hydrogen | Products`}];
-};
+export const meta = () =>
+  buildMeta({
+    title: 'All Products',
+    description: 'Browse our full product catalog.',
+    url: `${SITE_URL}/collections/all`,
+  });
 
 /**
  * @param {Route.LoaderArgs} args

@@ -1,13 +1,31 @@
 import {Link, useLoaderData} from 'react-router';
-import {Image, getPaginationVariables} from '@shopify/hydrogen';
+import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
+import {ArticleItem} from '~/components/ArticleItem';
+import {authorSlug} from '~/lib/authorSlug';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.blog.title ?? ''} blog`}];
+  const blog = data?.blog;
+  if (!blog) return buildMeta({title: 'Blog not found', robots: 'noindex,nofollow'});
+
+  const tags = buildMeta({
+    title: blog.seo?.title || `${blog.title} Blog`,
+    description: blog.seo?.description || `Articles from the ${blog.title} blog.`,
+    url: `${SITE_URL}/blogs/${blog.handle}`,
+  });
+  tags.push({
+    tagName: 'link',
+    rel: 'alternate',
+    type: 'application/rss+xml',
+    title: `${blog.title} RSS feed`,
+    href: `${SITE_URL}/blogs/${blog.handle}/rss.xml`,
+  });
+  return tags;
 };
 
 /**
@@ -37,14 +55,18 @@ async function loadCriticalData({context, request, params}) {
     throw new Response(`blog not found`, {status: 404});
   }
 
-  const [{blog}] = await Promise.all([
+  const [{blog}, {blog: authorsBlog}] = await Promise.all([
     context.storefront.query(BLOGS_QUERY, {
       variables: {
         blogHandle: params.blogHandle,
         ...paginationVariables,
       },
     }),
-    // Add other queries here, so that they are loaded in parallel
+    // Lightweight, separate from the paginated fragment above - needs every
+    // article's author, not just the current page's 4.
+    context.storefront.query(BLOG_AUTHORS_QUERY, {
+      variables: {blogHandle: params.blogHandle},
+    }),
   ]);
 
   if (!blog?.articles) {
@@ -53,7 +75,18 @@ async function loadCriticalData({context, request, params}) {
 
   redirectIfHandleIsLocalized(request, {handle: params.blogHandle, data: blog});
 
-  return {blog};
+  // Dedupe by normalized slug (see lib/authorSlug.js) - this store's real
+  // bylines have inconsistent casing for the same person.
+  const seen = new Map();
+  for (const article of authorsBlog?.articles?.nodes || []) {
+    const name = article.author?.name;
+    if (!name) continue;
+    const slug = authorSlug(name);
+    if (!seen.has(slug)) seen.set(slug, name);
+  }
+  const authors = [...seen.entries()].map(([slug, name]) => ({slug, name}));
+
+  return {blog, authors};
 }
 
 /**
@@ -68,12 +101,22 @@ function loadDeferredData({context}) {
 
 export default function Blog() {
   /** @type {LoaderReturnData} */
-  const {blog} = useLoaderData();
+  const {blog, authors} = useLoaderData();
   const {articles} = blog;
 
   return (
     <div className="blog">
       <h1>{blog.title}</h1>
+      {authors.length > 0 && (
+        <nav className="blog-authors" aria-label="Authors">
+          <span>Written by:</span>
+          {authors.map((author) => (
+            <Link key={author.slug} to={`/blogs/${blog.handle}/authors/${author.slug}`}>
+              {author.name}
+            </Link>
+          ))}
+        </nav>
+      )}
       <div className="blog-grid">
         <PaginatedResourceSection connection={articles}>
           {({node: article, index}) => (
@@ -85,39 +128,6 @@ export default function Blog() {
           )}
         </PaginatedResourceSection>
       </div>
-    </div>
-  );
-}
-
-/**
- * @param {{
- *   article: ArticleItemFragment;
- *   loading?: HTMLImageElement['loading'];
- * }}
- */
-function ArticleItem({article, loading}) {
-  const publishedAt = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(article.publishedAt));
-  return (
-    <div className="blog-article" key={article.id}>
-      <Link to={`/blogs/${article.blog.handle}/${article.handle}`}>
-        {article.image && (
-          <div className="blog-article-image">
-            <Image
-              alt={article.image.altText || article.title}
-              aspectRatio="3/2"
-              data={article.image}
-              loading={loading}
-              sizes="(min-width: 768px) 50vw, 100vw"
-            />
-          </div>
-        )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
-      </Link>
     </div>
   );
 }
@@ -177,6 +187,23 @@ const BLOGS_QUERY = `#graphql
     title
     blog {
       handle
+    }
+  }
+`;
+
+// Separate lightweight query for the "Written by" links - needs every
+// article's author, not just the current pagination page's 4.
+const BLOG_AUTHORS_QUERY = `#graphql
+  query BlogAuthorsList($blogHandle: String!, $country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    blog(handle: $blogHandle) {
+      articles(first: 50) {
+        nodes {
+          author: authorV2 {
+            name
+          }
+        }
+      }
     }
   }
 `;

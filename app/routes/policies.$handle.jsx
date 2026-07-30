@@ -1,10 +1,21 @@
 import {Link, useLoaderData} from 'react-router';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
+import {stripHtml, truncate} from '~/lib/seo/text';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.policy.title ?? ''}`}];
+  const policy = data?.policy;
+  if (!policy) return buildMeta({title: 'Policy not found', robots: 'noindex,nofollow'});
+
+  // ShopPolicy has no seo{} field in the Storefront API - description is
+  // always auto-generated from the policy body, never fabricated.
+  return buildMeta({
+    title: policy.title,
+    description: truncate(stripHtml(policy.body), 160),
+    url: `${SITE_URL}/policies/${policy.handle}`,
+  });
 };
 
 /**

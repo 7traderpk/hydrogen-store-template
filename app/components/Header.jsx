@@ -7,12 +7,16 @@ import logo from '~/assets/logo.png';
 /**
  * @param {HeaderProps}
  */
-export function Header({header, isLoggedIn, cart, publicStoreDomain}) {
+export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfig}) {
   const {shop, menu} = header;
   return (
     <header className="header">
       <NavLink prefetch="intent" to="/" end>
-        <img className="header-logo" src={logo} alt={shop.name} />
+        <img
+          className="header-logo"
+          src={designConfig?.logoUrl || logo}
+          alt={designConfig?.brandName || shop.name}
+        />
       </NavLink>
       <HeaderMenu
         menu={menu}

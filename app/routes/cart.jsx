@@ -1,13 +1,12 @@
 import {useLoaderData, data} from 'react-router';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
+import {buildMeta} from '~/lib/seo/metadata';
 
 /**
  * @type {Route.MetaFunction}
  */
-export const meta = () => {
-  return [{title: `Hydrogen | Cart`}];
-};
+export const meta = () => buildMeta({title: 'Cart', robots: 'noindex,nofollow'});
 
 /**
  * @type {HeadersFunction}
@@ -112,8 +111,13 @@ export default function Cart() {
   const cart = useLoaderData();
 
   return (
-    <div className="cart">
-      <h1>Cart</h1>
+    <div className="cart-page">
+      <h1>
+        Your Cart
+        {cart?.totalQuantity ? (
+          <span className="cart-page-count"> ({cart.totalQuantity})</span>
+        ) : null}
+      </h1>
       <CartMain layout="page" cart={cart} />
     </div>
   );

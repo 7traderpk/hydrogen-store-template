@@ -58,10 +58,40 @@ const env = {
   PUBLIC_STORE_DOMAIN: process.env.PUBLIC_STORE_DOMAIN,
   PUBLIC_STOREFRONT_API_TOKEN: process.env.PUBLIC_STOREFRONT_API_TOKEN,
   PRIVATE_STOREFRONT_API_TOKEN: process.env.PRIVATE_STOREFRONT_API_TOKEN,
+  // Customer Account API (native /account login, orders, addresses).
+  // SHOP_ID is the numeric id (e.g. from `shop { id }` in the Admin API) -
+  // Hydrogen needs it to build the shopify.com/authentication/<shopId>
+  // OAuth URLs; Shopify transparently serves those under the store's
+  // configured custom Customer Account API domain, if any (e.g.
+  // account.<store>.com), so Hydrogen itself never needs that domain.
+  PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID:
+    process.env.PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID,
+  SHOP_ID: process.env.SHOP_ID,
+  // /admin/design dashboard auth (bcrypt-hashed password, checked in
+  // routes/admin.login.jsx) and the Admin API token it uses server-side
+  // only to write the design config back to a Shop metafield.
+  ADMIN_USERNAME: process.env.ADMIN_USERNAME,
+  ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH,
+  SHOPIFY_ADMIN_API_TOKEN: process.env.SHOPIFY_ADMIN_API_TOKEN,
+  SHOPIFY_SHOP_GID: process.env.SHOPIFY_SHOP_GID,
+  // IndexNow ping key (routes/[indexnow.txt].jsx, routes/api.indexnow.jsx) -
+  // optional; both routes degrade gracefully (404/401) when unset.
+  INDEXNOW_KEY: process.env.INDEXNOW_KEY,
 };
 
+const OPTIONAL_ENV_VARS = new Set([
+  'PRIVATE_STOREFRONT_API_TOKEN',
+  'PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID',
+  'SHOP_ID',
+  'ADMIN_USERNAME',
+  'ADMIN_PASSWORD_HASH',
+  'SHOPIFY_ADMIN_API_TOKEN',
+  'SHOPIFY_SHOP_GID',
+  'INDEXNOW_KEY',
+]);
+
 for (const [key, value] of Object.entries(env)) {
-  if (!value && key !== 'PRIVATE_STOREFRONT_API_TOKEN') {
+  if (!value && !OPTIONAL_ENV_VARS.has(key)) {
     throw new Error(`Missing required environment variable: ${key}`);
   }
 }

@@ -1,95 +1,121 @@
 import {useLoaderData} from 'react-router';
-import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {getPublished} from '~/lib/pageBuilderDb.server';
+import {ElementRenderer} from '~/components/builder/ElementRenderer';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
+  if (!data) return buildMeta({title: 'Page not found', robots: 'noindex,nofollow'});
+  const {seo, handle} = data;
+  return buildMeta({
+    title: seo?.title || 'Digilog',
+    description: seo?.description,
+    url: `${SITE_URL}/pages/${handle}`,
+    // Bare brand-name fallback (no page title set) would double up with the
+    // suffix ("Digilog | Digilog") - only suffix when there's a real title.
+    titleSuffix: Boolean(seo?.title),
+  });
 };
 
 /**
  * @param {Route.LoaderArgs} args
  */
-export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
+export async function loader({params, context}) {
+  const {handle} = params;
+  const layout = getPublished(handle);
+  if (!layout) {
+    throw new Response('Not found', {status: 404});
+  }
 
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
+  const productsByNodeId = await resolveProductGridData(layout.tree, context);
 
-  return {...deferredData, ...criticalData};
+  return {handle: layout.handle, seo: layout.seo, tree: layout.tree, productsByNodeId};
 }
 
 /**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
+ * Walks the tree for every ProductGrid node and batch-resolves its
+ * collection's products via the Storefront API in parallel - keeps the
+ * page fully server-rendered with no client-side data waterfall.
  */
-async function loadCriticalData({context, request, params}) {
-  if (!params.handle) {
-    throw new Error('Missing page handle');
-  }
-
-  const [{page}] = await Promise.all([
-    context.storefront.query(PAGE_QUERY, {
-      variables: {
-        handle: params.handle,
-      },
-    }),
-    // Add other queries here, so that they are loaded in parallel
-  ]);
-
-  if (!page) {
-    throw new Response('Not Found', {status: 404});
-  }
-
-  redirectIfHandleIsLocalized(request, {handle: params.handle, data: page});
-
-  return {
-    page,
+async function resolveProductGridData(tree, context) {
+  const productGridNodes = [];
+  const visit = (nodes) => {
+    for (const node of nodes || []) {
+      if (node.type === 'ProductGrid' && node.props?.collectionHandle) {
+        productGridNodes.push(node);
+      }
+      if (node.children?.length) visit(node.children);
+    }
   };
+  visit(tree);
+
+  if (!productGridNodes.length) return {};
+
+  const results = await Promise.all(
+    productGridNodes.map((node) =>
+      context.storefront
+        .query(PAGE_BUILDER_COLLECTION_PRODUCTS_QUERY, {
+          variables: {
+            handle: node.props.collectionHandle,
+            first: Math.max(1, Math.min(24, node.props.limit || 8)),
+          },
+        })
+        .then((data) => data?.collection?.products?.nodes || [])
+        .catch((error) => {
+          console.error(
+            `Failed to load collection "${node.props.collectionHandle}" for ProductGrid node ${node.id}:`,
+            error,
+          );
+          return [];
+        }),
+    ),
+  );
+
+  return Object.fromEntries(productGridNodes.map((node, i) => [node.id, results[i]]));
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
-  return {};
-}
-
-export default function Page() {
+export default function BuilderPage() {
   /** @type {LoaderReturnData} */
-  const {page} = useLoaderData();
+  const {tree, productsByNodeId} = useLoaderData();
 
   return (
-    <div className="page">
-      <header>
-        <h1>{page.title}</h1>
-      </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
+    <div className="pb-page">
+      {tree.map((node) => (
+        <ElementRenderer key={node.id} node={node} productsByNodeId={productsByNodeId} />
+      ))}
     </div>
   );
 }
 
-const PAGE_QUERY = `#graphql
-  query Page(
-    $language: LanguageCode,
-    $country: CountryCode,
+const PAGE_BUILDER_COLLECTION_PRODUCTS_QUERY = `#graphql
+  query PageBuilderCollectionProducts(
     $handle: String!
-  )
-  @inContext(language: $language, country: $country) {
-    page(handle: $handle) {
-      handle
-      id
-      title
-      body
-      seo {
-        description
-        title
+    $first: Int!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(first: $first) {
+        nodes {
+          id
+          title
+          handle
+          featuredImage {
+            id
+            url
+            altText
+            width
+            height
+          }
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+        }
       }
     }
   }

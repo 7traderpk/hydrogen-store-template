@@ -1,22 +1,30 @@
-import {Await, useLoaderData} from 'react-router';
+import {Await, useLoaderData, useRouteLoaderData} from 'react-router';
 import {Suspense} from 'react';
 import {ProductItem} from '~/components/ProductItem';
 import {MockShopNotice} from '~/components/MockShopNotice';
 import {HeroBanner} from '~/components/sections/HeroBanner';
 import {FeaturedCollectionGrid} from '~/components/sections/FeaturedCollectionGrid';
 import {ImageWithText} from '~/components/sections/ImageWithText';
-import {
-  HERO_CONTENT,
-  FEATURED_PRODUCTS_HEADING,
-  FEATURE_HIGHLIGHTS_HEADING,
-  FEATURE_HIGHLIGHTS,
-} from '~/brand.config';
+import {DEFAULT_DESIGN_CONFIG} from '~/lib/designConfig';
+import {buildMeta, SITE_URL, SITE_NAME} from '~/lib/seo/metadata';
 
 /**
  * @type {Route.MetaFunction}
  */
-export const meta = () => {
-  return [{title: 'Hydrogen | Home'}];
+export const meta = ({matches}) => {
+  const rootData = matches.find((m) => m.id === 'root')?.data;
+  const shop = rootData?.header?.shop;
+  const designConfig = rootData?.designConfig;
+  const brandName = designConfig?.brandName || shop?.name || SITE_NAME;
+
+  return buildMeta({
+    title: `${brandName} — Online Store`,
+    description: shop?.description || `Shop ${brandName} online.`,
+    url: SITE_URL,
+    image: designConfig?.logoUrl || shop?.brand?.logo?.image?.url,
+    // Already a complete brand-inclusive title - skip the "| Digilog" suffix.
+    titleSuffix: false,
+  });
 };
 
 /**
@@ -75,21 +83,49 @@ function loadDeferredData({context}) {
 export default function Homepage() {
   /** @type {LoaderReturnData} */
   const data = useLoaderData();
+  const rootData = useRouteLoaderData('root');
+  const designConfig = rootData?.designConfig || DEFAULT_DESIGN_CONFIG;
   const heroImage = data.featuredProducts?.[0]?.featuredImage;
+
+  const sectionRenderers = {
+    hero: () => <HeroBanner key="hero" image={heroImage} {...designConfig.hero} />,
+    featuredCollectionGrid: () => (
+      <FeaturedCollectionGrid
+        key="featuredCollectionGrid"
+        title={designConfig.featuredProductsHeading}
+        products={data.featuredProducts}
+      />
+    ),
+    imageWithText: () => (
+      <ImageWithText
+        key="imageWithText"
+        heading={designConfig.featureHighlightsHeading}
+        items={designConfig.featureHighlights.map((item) => ({
+          title: item.title,
+          text: item.text,
+          image: item.imageUrl ? {url: item.imageUrl} : undefined,
+        }))}
+      />
+    ),
+    recommendedProducts: () => (
+      <RecommendedProducts key="recommendedProducts" products={data.recommendedProducts} />
+    ),
+  };
+
+  const enabledSections = (
+    designConfig.homepageSections || DEFAULT_DESIGN_CONFIG.homepageSections
+  ).filter((section) => section.enabled && sectionRenderers[section.key]);
+
+  // HeroBanner renders the page's only <h1> - if the merchant disables that
+  // section via /admin/design, the homepage would otherwise have zero H1s.
+  // This visually-hidden fallback keeps every page at exactly one H1.
+  const heroEnabled = enabledSections.some((s) => s.key === 'hero');
 
   return (
     <div className="home">
+      {!heroEnabled && <h1 className="sr-only">{designConfig.brandName}</h1>}
       {data.isShopLinked ? null : <MockShopNotice />}
-      <HeroBanner image={heroImage} {...HERO_CONTENT} />
-      <FeaturedCollectionGrid
-        title={FEATURED_PRODUCTS_HEADING}
-        products={data.featuredProducts}
-      />
-      <ImageWithText
-        heading={FEATURE_HIGHLIGHTS_HEADING}
-        items={FEATURE_HIGHLIGHTS}
-      />
-      <RecommendedProducts products={data.recommendedProducts} />
+      {enabledSections.map((section) => sectionRenderers[section.key]())}
     </div>
   );
 }

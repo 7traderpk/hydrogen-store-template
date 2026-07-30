@@ -40,7 +40,7 @@ export function CartMain({layout, cart: originalCart}) {
   const withDiscount =
     cart &&
     Boolean(cart?.discountCodes?.filter((code) => code.applicable)?.length);
-  const className = `cart-main ${withDiscount ? 'with-discount' : ''}`;
+  const className = `cart-main cart-main-${layout} ${withDiscount ? 'with-discount' : ''}`;
   const cartHasItems = cart?.totalQuantity ? cart.totalQuantity > 0 : false;
   const childrenMap = getLineItemChildrenMap(cart?.lines?.nodes ?? []);
 
@@ -50,11 +50,11 @@ export function CartMain({layout, cart: originalCart}) {
       aria-label={layout === 'page' ? 'Cart page' : 'Cart drawer'}
     >
       <CartEmpty hidden={linesCount} layout={layout} />
-      <div className="cart-details">
+      <div className={`cart-details cart-details-${layout}`}>
         <p id="cart-lines" className="sr-only">
           Line items
         </p>
-        <div>
+        <div className="cart-lines-wrap">
           <ul aria-labelledby="cart-lines">
             {(cart?.lines?.nodes ?? []).map((line) => {
               // we do not render non-parent lines at the root of the cart

@@ -25,6 +25,35 @@ function robotsTxtData({url}) {
 User-agent: *
 ${generalDisallowRules({sitemapUrl})}
 
+# AI answer-engine crawlers - explicitly allowed (not just falling under the
+# wildcard above) since this site is deliberately optimized for AI answer
+# engines (ChatGPT/GPTBot, Perplexity, Google AI Overviews, Gemini). Same
+# disallow paths as everyone else - cart/account/search/filter dupes stay
+# off-limits, everything else is fair game.
+User-agent: GPTBot
+${generalDisallowRules({})}
+
+User-agent: ChatGPT-User
+${generalDisallowRules({})}
+
+User-agent: PerplexityBot
+${generalDisallowRules({})}
+
+User-agent: ClaudeBot
+${generalDisallowRules({})}
+
+User-agent: Claude-Web
+${generalDisallowRules({})}
+
+User-agent: Google-Extended
+${generalDisallowRules({})}
+
+User-agent: CCBot
+${generalDisallowRules({})}
+
+User-agent: Applebot-Extended
+${generalDisallowRules({})}
+
 # Google adsbot ignores robots.txt unless specifically named!
 User-agent: adsbot-google
 Disallow: /cart

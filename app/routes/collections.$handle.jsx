@@ -3,12 +3,29 @@ import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
+import {truncate} from '~/lib/seo/text';
+import {JsonLd} from '~/components/seo/JsonLd';
+import {itemList} from '~/lib/seo/schema/itemList';
+import {breadcrumbList} from '~/lib/seo/schema/breadcrumbList';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
+  const collection = data?.collection;
+  if (!collection) {
+    return buildMeta({title: 'Collection not found', robots: 'noindex,nofollow'});
+  }
+  // Canonical always points at the clean collection URL, never a paginated
+  // cursor - the paginated pages that follow via ?cursor=... are variants
+  // of the same content, not distinct pages worth indexing separately.
+  return buildMeta({
+    title: collection.seo?.title || `${collection.title} Collection`,
+    description: collection.seo?.description || truncate(collection.description, 160),
+    url: `${SITE_URL}/collections/${collection.handle}`,
+    image: collection.products?.nodes?.[0]?.featuredImage?.url,
+  });
 };
 
 /**
@@ -75,8 +92,24 @@ export default function Collection() {
   /** @type {LoaderReturnData} */
   const {collection} = useLoaderData();
 
+  const collectionUrl = `${SITE_URL}/collections/${collection.handle}`;
+  const jsonLd = [
+    itemList(
+      (collection.products?.nodes || []).map((product) => ({
+        url: `${SITE_URL}/products/${product.handle}`,
+        name: product.title,
+        image: product.featuredImage?.url,
+      })),
+    ),
+    breadcrumbList([
+      {name: 'Home', url: SITE_URL},
+      {name: collection.title, url: collectionUrl},
+    ]),
+  ];
+
   return (
     <div className="collection">
+      <JsonLd data={jsonLd} />
       <h1>{collection.title}</h1>
       <p className="collection-description">{collection.description}</p>
       <PaginatedResourceSection
@@ -147,6 +180,10 @@ const COLLECTION_QUERY = `#graphql
       handle
       title
       description
+      seo {
+        title
+        description
+      }
       products(
         first: $first,
         last: $last,
