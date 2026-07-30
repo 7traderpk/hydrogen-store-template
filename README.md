@@ -47,3 +47,4 @@ npm run build
 - Vite
 - Shopify CLI
 - Tailwind CSS v4
+
