@@ -58,6 +58,10 @@ ${items}
  * @returns {string | null}
  */
 function buildItem(product) {
+  // Multi-variant products aren't sold on this storefront and their product
+  // page 404s - see products.$handle.jsx - so don't advertise them here.
+  if (product.variants.nodes.length > 1) return null;
+
   const variant = product.variants.nodes[0];
   const image = product.featuredImage;
   if (!variant?.price?.amount || !image?.url) return null;
@@ -120,7 +124,7 @@ const MERCHANT_FEED_QUERY = `#graphql
           url
           altText
         }
-        variants(first: 1) {
+        variants(first: 2) {
           nodes {
             sku
             barcode

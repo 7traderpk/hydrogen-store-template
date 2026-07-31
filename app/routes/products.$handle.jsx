@@ -13,6 +13,7 @@ import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductItem} from '~/components/ProductItem';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {hasMultipleVariants} from '~/lib/variants';
 import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 import {stripHtml, truncate, firstSentence} from '~/lib/seo/text';
 import {JsonLd} from '~/components/seo/JsonLd';
@@ -75,6 +76,12 @@ async function loadCriticalData({context, params, request}) {
   ]);
 
   if (!product?.id) {
+    throw new Response(null, {status: 404});
+  }
+
+  // Multi-variant products aren't sold on this storefront - treat their
+  // product page as not found so they're unreachable even by direct URL.
+  if (hasMultipleVariants(product)) {
     throw new Response(null, {status: 404});
   }
 
@@ -249,9 +256,11 @@ function RelatedProducts({products}) {
       <Suspense fallback={null}>
         <Await resolve={products}>
           {(response) => {
-            const items = response?.productRecommendations?.length
-              ? response.productRecommendations
-              : response?.fallback?.nodes;
+            const items = (
+              response?.productRecommendations?.length
+                ? response.productRecommendations
+                : response?.fallback?.nodes
+            )?.filter((product) => !hasMultipleVariants(product));
             if (!items?.length) return null;
             return (
               <div className="recommended-products-grid">
@@ -315,6 +324,11 @@ const PRODUCT_FRAGMENT = `#graphql
     description
     encodedVariantExistence
     encodedVariantAvailability
+    variants(first: 2) {
+      nodes {
+        id
+      }
+    }
     images(first: 10) {
       nodes {
         id
@@ -398,6 +412,11 @@ const RELATED_PRODUCTS_QUERY = `#graphql
       minVariantPrice {
         amount
         currencyCode
+      }
+    }
+    variants(first: 2) {
+      nodes {
+        id
       }
     }
   }

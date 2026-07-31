@@ -7,6 +7,7 @@ import {FeaturedCollectionGrid} from '~/components/sections/FeaturedCollectionGr
 import {ImageWithText} from '~/components/sections/ImageWithText';
 import {DEFAULT_DESIGN_CONFIG} from '~/lib/designConfig';
 import {buildMeta, SITE_URL, SITE_NAME} from '~/lib/seo/metadata';
+import {hasMultipleVariants} from '~/lib/variants';
 
 /**
  * @type {Route.MetaFunction}
@@ -54,9 +55,13 @@ async function loadCriticalData({context}) {
     context.storefront.query(FEATURED_PRODUCTS_QUERY),
   ]);
 
+  // Multi-variant products aren't sold on this storefront - keep them out of
+  // the homepage. See products.$handle.jsx for the direct-URL block.
   return {
     isShopLinked: Boolean(context.env.PUBLIC_STORE_DOMAIN),
-    featuredProducts: products.nodes,
+    featuredProducts: products.nodes
+      .filter((product) => !hasMultipleVariants(product))
+      .slice(0, 4),
   };
 }
 
@@ -147,9 +152,12 @@ function RecommendedProducts({products}) {
           {(response) => (
             <div className="recommended-products-grid">
               {response
-                ? response.products.nodes.map((product) => (
-                    <ProductItem key={product.id} product={product} />
-                  ))
+                ? response.products.nodes
+                    .filter((product) => !hasMultipleVariants(product))
+                    .slice(0, 4)
+                    .map((product) => (
+                      <ProductItem key={product.id} product={product} />
+                    ))
                 : null}
             </div>
           )}
@@ -178,10 +186,15 @@ const FEATURED_PRODUCTS_QUERY = `#graphql
       width
       height
     }
+    variants(first: 2) {
+      nodes {
+        id
+      }
+    }
   }
   query FeaturedProducts($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    products(first: 4, sortKey: BEST_SELLING) {
+    products(first: 12, sortKey: BEST_SELLING) {
       nodes {
         ...FeaturedProduct
       }
@@ -207,10 +220,15 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       width
       height
     }
+    variants(first: 2) {
+      nodes {
+        id
+      }
+    }
   }
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    products(first: 4, sortKey: UPDATED_AT, reverse: true) {
+    products(first: 12, sortKey: UPDATED_AT, reverse: true) {
       nodes {
         ...RecommendedProduct
       }

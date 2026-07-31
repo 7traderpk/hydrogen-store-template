@@ -3,6 +3,7 @@ import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
 import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
+import {hasMultipleVariants} from '~/lib/variants';
 
 /**
  * @type {Route.MetaFunction}
@@ -44,6 +45,13 @@ async function loadCriticalData({context, request}) {
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
+
+  // Multi-variant products aren't sold on this storefront - keep them out of
+  // the catalog listing. See products.$handle.jsx for the direct-URL block.
+  products.nodes = products.nodes.filter(
+    (product) => !hasMultipleVariants(product),
+  );
+
   return {products};
 }
 
@@ -102,6 +110,11 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
       }
       maxVariantPrice {
         ...MoneyCollectionItem
+      }
+    }
+    variants(first: 2) {
+      nodes {
+        id
       }
     }
   }

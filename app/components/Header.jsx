@@ -2,7 +2,15 @@ import {Suspense} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
+import {SearchBar} from '~/components/SearchBar';
+import '~/components/SearchBar.css';
 import logo from '~/assets/logo.png';
+
+const SEARCH_CATEGORIES = [
+  {label: 'All', value: 'all'},
+  {label: 'Electronic Components', value: 'components'},
+  {label: 'Test Instruments', value: 'instruments'},
+];
 
 /**
  * @param {HeaderProps}
@@ -18,6 +26,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfi
           alt={designConfig?.brandName || shop.name}
         />
       </NavLink>
+      <SearchBar categories={SEARCH_CATEGORIES} />
       <HeaderMenu
         menu={menu}
         viewport="desktop"
@@ -122,7 +131,10 @@ function HeaderMenuMobileToggle() {
 function SearchToggle() {
   const {open} = useAside();
   return (
-    <button className="reset" onClick={() => open('search')}>
+    <button
+      className="reset search-toggle-mobile"
+      onClick={() => open('search')}
+    >
       Search
     </button>
   );

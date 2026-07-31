@@ -7,6 +7,7 @@ import {FilterSidebar} from '~/components/FilterSidebar';
 import {SearchToolbar} from '~/components/SearchToolbar';
 import {SearchProductCard} from '~/components/SearchProductCard';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
+import {hasMultipleVariants} from '~/lib/variants';
 import {
   getProductFiltersFromParams,
   getSortFromParams,
@@ -271,6 +272,11 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
         title
       }
     }
+    variants(first: 2) {
+      nodes {
+        id
+      }
+    }
   }
 `;
 
@@ -419,6 +425,12 @@ async function regularSearch({request, context}) {
     throw new Error('No search data returned from Shopify API');
   }
 
+  // Multi-variant products aren't sold on this storefront - keep them out of
+  // search results. See products.$handle.jsx for the direct-URL block.
+  items.products.nodes = items.products.nodes.filter(
+    (product) => !hasMultipleVariants(product),
+  );
+
   const total = Object.values(items).reduce(
     (acc, {nodes}) => acc + nodes.length,
     0,
@@ -502,6 +514,11 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
       price {
         amount
         currencyCode
+      }
+    }
+    variants(first: 2) {
+      nodes {
+        id
       }
     }
   }
@@ -595,6 +612,13 @@ async function predictiveSearch({request, context}) {
   if (!items) {
     throw new Error('No predictive search data returned from Shopify API');
   }
+
+  // Multi-variant products aren't sold on this storefront - keep them out of
+  // predictive search results. See products.$handle.jsx for the direct-URL
+  // block.
+  items.products = items.products.filter(
+    (product) => !hasMultipleVariants(product),
+  );
 
   const total = Object.values(items).reduce(
     (acc, item) => acc + item.length,

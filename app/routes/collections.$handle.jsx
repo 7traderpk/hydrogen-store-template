@@ -3,6 +3,7 @@ import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {hasMultipleVariants} from '~/lib/variants';
 import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 import {truncate} from '~/lib/seo/text';
 import {JsonLd} from '~/components/seo/JsonLd';
@@ -72,6 +73,12 @@ async function loadCriticalData({context, params, request}) {
 
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
+
+  // Multi-variant products aren't sold on this storefront - keep them out of
+  // collection listings. See products.$handle.jsx for the direct-URL block.
+  collection.products.nodes = collection.products.nodes.filter(
+    (product) => !hasMultipleVariants(product),
+  );
 
   return {
     collection,
@@ -158,6 +165,11 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
       }
       maxVariantPrice {
         ...MoneyProductItem
+      }
+    }
+    variants(first: 2) {
+      nodes {
+        id
       }
     }
   }
