@@ -80,6 +80,10 @@ function AccountMenu() {
         &nbsp; Addresses &nbsp;
       </NavLink>
       &nbsp;|&nbsp;
+      <NavLink to="/account/wishlist" style={isActiveStyle}>
+        &nbsp; Wishlist &nbsp;
+      </NavLink>
+      &nbsp;|&nbsp;
       <Logout />
     </nav>
   );

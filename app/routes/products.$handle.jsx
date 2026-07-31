@@ -12,8 +12,10 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {ProductItem} from '~/components/ProductItem';
+import {WishlistButton} from '~/components/WishlistButton';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {hasMultipleVariants} from '~/lib/variants';
+import {isInWishlist} from '~/lib/wishlistDb.server';
 import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 import {stripHtml, truncate, firstSentence} from '~/lib/seo/text';
 import {JsonLd} from '~/components/seo/JsonLd';
@@ -23,6 +25,14 @@ import {DirectAnswer} from '~/components/DirectAnswer';
 import {SpecList} from '~/components/SpecList';
 import {Faq} from '~/components/Faq';
 import {parseJsonMetafield} from '~/lib/seo/metafields';
+
+const CUSTOMER_ID_QUERY = `#graphql
+  query ProductPageCustomerId {
+    customer {
+      id
+    }
+  }
+`;
 
 /**
  * @type {Route.MetaFunction}
@@ -88,8 +98,18 @@ async function loadCriticalData({context, params, request}) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
+  // Skip the extra Customer Account API round trip for the common case
+  // (anonymous visitor) - isLoggedIn() is a fast local check.
+  const {customerAccount} = context;
+  let initialWishlisted = false;
+  if (await customerAccount.isLoggedIn()) {
+    const {data} = await customerAccount.query(CUSTOMER_ID_QUERY);
+    initialWishlisted = isInWishlist(data?.customer?.id, handle);
+  }
+
   return {
     product,
+    initialWishlisted,
   };
 }
 
@@ -117,7 +137,7 @@ function loadDeferredData({context, params}) {
 
 export default function Product() {
   /** @type {LoaderReturnData} */
-  const {product, relatedProducts} = useLoaderData();
+  const {product, relatedProducts, initialWishlisted} = useLoaderData();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -135,7 +155,7 @@ export default function Product() {
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, vendor, descriptionHtml} = product;
+  const {title, descriptionHtml} = product;
 
   // Metafields arrive in PRODUCT_FRAGMENT identifier order:
   // [short_answer, faqs, specs] (null when unset in Shopify admin).
@@ -175,15 +195,15 @@ export default function Product() {
           productTitle={product.title}
         />
         <div className="product-main">
-          <h1>{title}</h1>
+          <div className="product-title-row">
+            <h1>{title}</h1>
+            <WishlistButton
+              handle={product.handle}
+              initialWishlisted={initialWishlisted}
+            />
+          </div>
           <DirectAnswer text={directAnswerText} />
           <dl className="product-meta">
-            {vendor && (
-              <>
-                <dt>Brand</dt>
-                <dd className="product-meta-vendor">{vendor}</dd>
-              </>
-            )}
             <dt>Availability</dt>
             <dd
               className={`product-meta-availability${

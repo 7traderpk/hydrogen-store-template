@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {Await, NavLink, useAsyncValue} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
@@ -71,13 +71,26 @@ export function HeaderMenu({
       {(menu || FALLBACK_HEADER_MENU).items.map((item) => {
         if (!item.url) return null;
 
-        // if the url is internal, we strip the domain
-        const url =
-          item.url.includes('myshopify.com') ||
-          item.url.includes(publicStoreDomain) ||
-          item.url.includes(primaryDomainUrl)
-            ? new URL(item.url).pathname
-            : item.url;
+        const url = resolveMenuUrl(item.url, {
+          publicStoreDomain,
+          primaryDomainUrl,
+        });
+
+        if (item.items?.length) {
+          return (
+            <HeaderMenuDropdown
+              key={item.id}
+              title={item.title}
+              url={url}
+              items={item.items}
+              viewport={viewport}
+              publicStoreDomain={publicStoreDomain}
+              primaryDomainUrl={primaryDomainUrl}
+              onNavigate={close}
+            />
+          );
+        }
+
         return (
           <NavLink
             className="header-menu-item"
@@ -93,6 +106,120 @@ export function HeaderMenu({
         );
       })}
     </nav>
+  );
+}
+
+/** Strips the shop's own domain off a menu item's URL so internal links
+ * navigate client-side instead of doing a full page load. */
+function resolveMenuUrl(url, {publicStoreDomain, primaryDomainUrl}) {
+  return url.includes('myshopify.com') ||
+    url.includes(publicStoreDomain) ||
+    url.includes(primaryDomainUrl)
+    ? new URL(url).pathname
+    : url;
+}
+
+/**
+ * A top-level menu item that has curated sub-items in Shopify Admin ->
+ * Online Store -> Navigation (e.g. "Product Categories" listing the store's
+ * main collections). Desktop: click-to-open dropdown. Mobile: an always-
+ * expanded indented list, since the mobile menu is already a full drawer.
+ * @param {{
+ *   title: string;
+ *   url: string;
+ *   items: Array<{id: string; title: string; url: string}>;
+ *   viewport: Viewport;
+ *   publicStoreDomain: string;
+ *   primaryDomainUrl: string;
+ *   onNavigate: () => void;
+ * }}
+ */
+function HeaderMenuDropdown({
+  title,
+  items,
+  viewport,
+  publicStoreDomain,
+  primaryDomainUrl,
+  onNavigate,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (viewport !== 'desktop' || !isOpen) return;
+
+    function handlePointerDown(event) {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [isOpen, viewport]);
+
+  if (viewport === 'mobile') {
+    return (
+      <div className="header-menu-item-group">
+        <span className="header-menu-item header-menu-item-label">
+          {title}
+        </span>
+        <div className="header-menu-submenu-mobile">
+          {items.map((child) => (
+            <NavLink
+              key={child.id}
+              className="header-menu-subitem"
+              onClick={onNavigate}
+              prefetch="intent"
+              style={activeLinkStyle}
+              to={resolveMenuUrl(child.url, {publicStoreDomain, primaryDomainUrl})}
+            >
+              {child.title}
+            </NavLink>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="header-menu-item-group" ref={rootRef}>
+      <button
+        type="button"
+        className="header-menu-item header-menu-item-toggle reset"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {title}
+        <span aria-hidden="true" className="header-menu-caret">
+          ▾
+        </span>
+      </button>
+      {isOpen && (
+        <ul
+          className="header-menu-submenu"
+          role="menu"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setIsOpen(false);
+          }}
+        >
+          {items.map((child) => (
+            <li key={child.id} role="none">
+              <NavLink
+                role="menuitem"
+                className="header-menu-subitem"
+                prefetch="intent"
+                onClick={() => setIsOpen(false)}
+                to={resolveMenuUrl(child.url, {publicStoreDomain, primaryDomainUrl})}
+              >
+                {child.title}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

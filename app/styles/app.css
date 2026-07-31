@@ -293,6 +293,61 @@ button.reset:hover:not(:has(> *)) {
   cursor: pointer;
 }
 
+.header-menu-item-group {
+  position: relative;
+}
+
+.header-menu-item-toggle {
+  display: flex;
+  align-items: center;
+  grid-gap: 0.3rem;
+  color: black;
+  font: inherit;
+}
+
+.header-menu-item-label {
+  cursor: default;
+}
+
+.header-menu-caret {
+  font-size: 0.7rem;
+}
+
+.header-menu-submenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  grid-gap: 0.25rem 1.5rem;
+  margin: 0;
+  padding: 1rem;
+  list-style: none;
+  background: var(--color-light);
+  border: 1px solid #d5d9d9;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.header-menu-subitem {
+  display: block;
+  padding: 0.35rem 0;
+  color: black;
+  white-space: nowrap;
+}
+
+.header-menu-subitem:hover {
+  color: var(--color-primary);
+}
+
+.header-menu-submenu-mobile {
+  display: flex;
+  flex-direction: column;
+  grid-gap: 0.5rem;
+  margin: 0.5rem 0 0 1rem;
+}
+
 .header-ctas {
   align-items: center;
   display: flex;
@@ -1585,9 +1640,70 @@ button.reset:hover:not(:has(> *)) {
   margin-bottom: 2rem;
 }
 
+.product-item {
+  position: relative;
+}
+
+.product-item-link {
+  display: block;
+}
+
 .product-item img {
   height: auto;
   width: 100%;
+}
+
+.product-item-wishlist {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+}
+
+.wishlist-button-form {
+  display: inline-block;
+}
+
+.wishlist-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #d5d9d9;
+  border-radius: 50%;
+  color: var(--color-primary);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wishlist-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.wishlist-button.is-wishlisted {
+  background: var(--color-light);
+  color: #e0245e;
+}
+
+.product-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  grid-gap: 1rem;
+}
+
+.product-title-row h1 {
+  margin: 0;
+}
+
+.product-title-row .wishlist-button {
+  background: var(--color-light);
+  border-color: #d5d9d9;
 }
 
 /*
