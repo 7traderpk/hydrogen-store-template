@@ -6,17 +6,15 @@ import {SearchBar} from '~/components/SearchBar';
 import '~/components/SearchBar.css';
 import logo from '~/assets/logo.png';
 
-const SEARCH_CATEGORIES = [
-  {label: 'All', value: 'all'},
-  {label: 'Electronic Components', value: 'components'},
-  {label: 'Test Instruments', value: 'instruments'},
-];
-
 /**
  * @param {HeaderProps}
  */
 export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfig}) {
   const {shop, menu} = header;
+  const searchCategories = getSearchCategories(menu, {
+    publicStoreDomain,
+    primaryDomainUrl: header.shop.primaryDomain.url,
+  });
   return (
     <header className="header">
       <NavLink className="header-logo-link" prefetch="intent" to="/" end>
@@ -26,7 +24,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfi
           alt={designConfig?.brandName || shop.name}
         />
       </NavLink>
-      <SearchBar categories={SEARCH_CATEGORIES} />
+      <SearchBar categories={searchCategories} />
       <HeaderMenu
         menu={menu}
         viewport="desktop"
@@ -117,6 +115,30 @@ function resolveMenuUrl(url, {publicStoreDomain, primaryDomainUrl}) {
     url.includes(primaryDomainUrl)
     ? new URL(url).pathname
     : url;
+}
+
+/**
+ * Search-bar category options, sourced from the same curated menu item as
+ * the "Product Categories" dropdown (see HeaderMenuDropdown) - whichever
+ * top-level menu item has sub-items in Shopify Admin -> Online Store ->
+ * Navigation. Falls back to just "All" if the menu has no such item yet.
+ * @param {HeaderProps['header']['menu']} menu
+ * @param {{publicStoreDomain: string; primaryDomainUrl: string}} domains
+ */
+function getSearchCategories(menu, domains) {
+  const categoryMenuItem = (menu || FALLBACK_HEADER_MENU).items.find(
+    (item) => item.items?.length,
+  );
+
+  const collectionCategories = (categoryMenuItem?.items ?? [])
+    .map((item) => {
+      const path = resolveMenuUrl(item.url, domains);
+      const handle = path.split('/').filter(Boolean).pop();
+      return handle ? {label: item.title, value: handle} : null;
+    })
+    .filter(Boolean);
+
+  return [{label: 'All', value: 'all'}, ...collectionCategories];
 }
 
 /**
