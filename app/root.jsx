@@ -12,7 +12,7 @@ import {
 import favicon from '~/assets/favicon.svg';
 import logo from '~/assets/logo.png';
 import {getDesignConfig, DEFAULT_DESIGN_CONFIG} from '~/lib/designConfig';
-import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {HEADER_QUERY} from '~/lib/fragments';
 import {SITE_URL} from '~/lib/seo/metadata';
 import {JsonLd} from '~/components/seo/JsonLd';
 import {organization} from '~/lib/seo/schema/organization';
@@ -140,25 +140,11 @@ async function loadCriticalData({context}) {
  * @param {Route.LoaderArgs}
  */
 function loadDeferredData({context}) {
-  const {storefront, customerAccount, cart} = context;
+  const {customerAccount, cart} = context;
 
-  // defer the footer query (below the fold)
-  const footer = storefront
-    .query(FOOTER_QUERY, {
-      cache: storefront.CacheLong(),
-      variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
-      },
-    })
-    .catch((error) => {
-      // Log query errors, but don't throw them so the page can still render
-      console.error(error);
-      return null;
-    });
   return {
     cart: cart.get(),
     isLoggedIn: customerAccount.isLoggedIn(),
-    footer,
   };
 }
 
