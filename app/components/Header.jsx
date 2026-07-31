@@ -19,7 +19,7 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfi
   const {shop, menu} = header;
   return (
     <header className="header">
-      <NavLink prefetch="intent" to="/" end>
+      <NavLink className="header-logo-link" prefetch="intent" to="/" end>
         <img
           className="header-logo"
           src={designConfig?.logoUrl || logo}
@@ -237,7 +237,6 @@ function HeaderCtas({isLoggedIn, cart}) {
           </Await>
         </Suspense>
       </NavLink>
-      <SearchToggle />
       <CartToggle cart={cart} />
     </nav>
   );
@@ -251,18 +250,6 @@ function HeaderMenuMobileToggle() {
       onClick={() => open('mobile')}
     >
       <h3>☰</h3>
-    </button>
-  );
-}
-
-function SearchToggle() {
-  const {open} = useAside();
-  return (
-    <button
-      className="reset search-toggle-mobile"
-      onClick={() => open('search')}
-    >
-      Search
     </button>
   );
 }

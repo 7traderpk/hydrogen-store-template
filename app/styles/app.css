@@ -254,11 +254,37 @@ button.reset:hover:not(:has(> *)) {
   background: #fff;
   border-bottom: 3px solid var(--color-primary);
   display: flex;
+  flex-wrap: wrap;
   height: var(--header-height);
   padding: 0 1rem;
   position: sticky;
   top: 0;
   z-index: 1;
+}
+
+/* Below the desktop nav breakpoint, the search bar drops to its own
+   full-width row under the logo/account/cart row. */
+@media (max-width: 44.99em) {
+  .header {
+    height: auto;
+    row-gap: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .header-logo-link {
+    order: 1;
+  }
+
+  .header-ctas {
+    order: 2;
+  }
+
+  .search-bar {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
 }
 
 .header-logo {
