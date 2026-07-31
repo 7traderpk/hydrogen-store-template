@@ -2,14 +2,7 @@ import {useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import {hasMultipleVariants} from '~/lib/variants';
 import {listWishlistHandles} from '~/lib/wishlistDb.server';
-
-const CUSTOMER_ID_QUERY = `#graphql
-  query WishlistCustomerId {
-    customer {
-      id
-    }
-  }
-`;
+import {CUSTOMER_ID_QUERY} from '~/graphql/customer-account/CustomerIdQuery';
 
 const WISHLIST_PRODUCT_QUERY = `#graphql
   query WishlistProduct($handle: String!, $country: CountryCode, $language: LanguageCode)

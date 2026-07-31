@@ -16,6 +16,7 @@ import {WishlistButton} from '~/components/WishlistButton';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {hasMultipleVariants} from '~/lib/variants';
 import {isInWishlist} from '~/lib/wishlistDb.server';
+import {CUSTOMER_ID_QUERY} from '~/graphql/customer-account/CustomerIdQuery';
 import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 import {stripHtml, truncate, firstSentence} from '~/lib/seo/text';
 import {JsonLd} from '~/components/seo/JsonLd';
@@ -25,14 +26,6 @@ import {DirectAnswer} from '~/components/DirectAnswer';
 import {SpecList} from '~/components/SpecList';
 import {Faq} from '~/components/Faq';
 import {parseJsonMetafield} from '~/lib/seo/metafields';
-
-const CUSTOMER_ID_QUERY = `#graphql
-  query ProductPageCustomerId {
-    customer {
-      id
-    }
-  }
-`;
 
 /**
  * @type {Route.MetaFunction}

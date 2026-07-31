@@ -1,13 +1,6 @@
 import {data as remixData} from 'react-router';
 import {toggleWishlist} from '~/lib/wishlistDb.server';
-
-const CUSTOMER_ID_QUERY = `#graphql
-  query WishlistCustomerId {
-    customer {
-      id
-    }
-  }
-`;
+import {CUSTOMER_ID_QUERY} from '~/graphql/customer-account/CustomerIdQuery';
 
 /**
  * Toggles a product on/off the logged-in customer's wishlist.
