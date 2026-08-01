@@ -31,6 +31,17 @@ export default async function handleRequest(
       'https://cdn.shopify.com',
       ...ADDITIONAL_CSP_IMAGE_DOMAINS,
     ],
+    // Product descriptions embed YouTube/Twitter iframes. Without an
+    // explicit frame-src, CSP falls back to default-src (self + Shopify
+    // only), so these embeds get silently blocked (net::ERR_BLOCKED_BY_CSP)
+    // even though they render fine sized-wise - see app/styles/app.css's
+    // `.product-description iframe` rule for the separate sizing fix.
+    frameSrc: [
+      "'self'",
+      'https://www.youtube.com',
+      'https://www.youtube-nocookie.com',
+      'https://platform.twitter.com',
+    ],
   });
 
   const body = await renderToReadableStream(
