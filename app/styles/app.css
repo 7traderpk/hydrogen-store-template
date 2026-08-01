@@ -1757,6 +1757,31 @@ button.reset:hover:not(:has(> *)) {
   opacity: 0.5;
 }
 
+/* Below the desktop 2-column breakpoint, the gallery stacks above
+   product-main (see .product's grid-template-columns) - a full-width
+   square image plus full-size title/description text pushed Add to Cart
+   off screen on first view. Shrink both to get price/availability/Add to
+   Cart above the fold without scrolling. */
+@media (max-width: 44.99em) {
+  .product-gallery-main img {
+    height: 45vh;
+    object-fit: cover;
+  }
+
+  .product h1 {
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .product-meta {
+    font-size: 0.85rem;
+  }
+
+  .product-price {
+    font-size: 1.1rem;
+  }
+}
+
 .product-options-grid {
   display: flex;
   flex-wrap: wrap;

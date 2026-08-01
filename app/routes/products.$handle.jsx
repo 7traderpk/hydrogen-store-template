@@ -195,7 +195,6 @@ export default function Product() {
               initialWishlisted={initialWishlisted}
             />
           </div>
-          <DirectAnswer text={directAnswerText} />
           <dl className="product-meta">
             <dt>Availability</dt>
             <dd
@@ -222,6 +221,7 @@ export default function Product() {
             productOptions={productOptions}
             selectedVariant={selectedVariant}
           />
+          <DirectAnswer text={directAnswerText} />
         </div>
       </div>
 
