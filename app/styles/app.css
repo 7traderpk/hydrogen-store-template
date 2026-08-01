@@ -279,12 +279,10 @@ button.reset:hover:not(:has(> *)) {
     order: 2;
   }
 
-  .search-bar {
-    order: 3;
-    flex-basis: 100%;
-    max-width: none;
-    margin-left: 0;
-  }
+  /* .search-bar's own mobile override lives in SearchBar.css, not here -
+     that component's CSS loads in a separate chunk that comes after this
+     one in <head>, so a rule here for the same property would lose the
+     cascade tie to SearchBar.css's unconditional base rule. */
 }
 
 .header-logo {

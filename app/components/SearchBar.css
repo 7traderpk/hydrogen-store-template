@@ -69,3 +69,17 @@
 .search-bar__submit:hover {
   background: #e88a00;
 }
+
+/* Below the desktop nav breakpoint, this bar drops to its own full-width
+   row under the header's logo/account/cart row (see .header in app.css).
+   Declared here, not there - Header.jsx's `.search-bar` base rule above
+   loads in the same CSS chunk as this, so a later same-file rule reliably
+   wins the cascade regardless of chunk load order between files. */
+@media (max-width: 44.99em) {
+  .search-bar {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+}
