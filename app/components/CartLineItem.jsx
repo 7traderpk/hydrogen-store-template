@@ -1,6 +1,7 @@
 import {CartForm, Image} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
-import {Link} from 'react-router';
+import {Link, useFetcher} from 'react-router';
+import {useEffect, useState} from 'react';
 import {ProductPrice} from './ProductPrice';
 import {useAside} from './Aside';
 
@@ -118,7 +119,11 @@ function CartLineQuantity({line}) {
             &#8722;
           </button>
         </CartLineUpdateButton>
-        <span className="quantity-selector-value">{quantity}</span>
+        <CartLineQuantityInput
+          lineId={lineId}
+          quantity={quantity}
+          disabled={!!isOptimistic}
+        />
         <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
           <button
             type="submit"
@@ -134,6 +139,64 @@ function CartLineQuantity({line}) {
       </div>
       <CartLineRemoveButton lineIds={[lineId]} disabled={!!isOptimistic} />
     </div>
+  );
+}
+
+/**
+ * A number input for the line's quantity - typing a value and blurring (or
+ * pressing Enter) submits it directly, instead of only allowing +/- one at a
+ * time. Uses the same fetcher key as the +/- buttons so rapid edits from
+ * either control cancel-and-replace each other rather than racing.
+ * @param {{lineId: string; quantity: number; disabled: boolean}}
+ */
+function CartLineQuantityInput({lineId, quantity, disabled}) {
+  const fetcher = useFetcher({key: getUpdateKey([lineId])});
+  const [value, setValue] = useState(String(quantity));
+
+  // Stay in sync with the server-confirmed quantity (e.g. after the +/-
+  // buttons run, or once this input's own submission resolves).
+  useEffect(() => {
+    setValue(String(quantity));
+  }, [quantity]);
+
+  function commit() {
+    const parsed = Math.round(Number(value));
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      setValue(String(quantity));
+      return;
+    }
+    if (parsed === quantity) return;
+
+    fetcher.submit(
+      {
+        [CartForm.INPUT_NAME]: JSON.stringify({
+          action: CartForm.ACTIONS.LinesUpdate,
+          inputs: {lines: [{id: lineId, quantity: parsed}]},
+        }),
+      },
+      {method: 'post', action: '/cart'},
+    );
+  }
+
+  return (
+    <input
+      type="number"
+      inputMode="numeric"
+      min="1"
+      className="quantity-selector-value quantity-selector-input"
+      aria-label="Quantity"
+      value={value}
+      disabled={disabled}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commit();
+          event.currentTarget.blur();
+        }
+      }}
+    />
   );
 }
 

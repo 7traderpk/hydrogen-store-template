@@ -1927,6 +1927,23 @@ button.reset:hover:not(:has(> *)) {
   line-height: 1.6;
 }
 
+/* Merchant-authored description HTML (Shopify's rich text editor, or
+   copy-pasted from manufacturer sites) often hardcodes pixel width/height
+   on img/iframe tags - without this override those overflow the viewport
+   on mobile instead of scaling down. */
+.product-description img,
+.product-description video {
+  max-width: 100%;
+  height: auto;
+}
+
+.product-description iframe {
+  max-width: 100%;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+}
+
 /*
 * --------------------------------------------------
 * routes/products.$handle - related products
@@ -2022,9 +2039,17 @@ button[type='submit']:disabled,
 * routes/blog.$articlehandle.tsx
 * --------------------------------------------------
 */
-.article img {
+.article img,
+.article video {
   height: auto;
   width: 100%;
+}
+
+.article iframe {
+  max-width: 100%;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
 }
 
 /*
