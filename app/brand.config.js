@@ -24,7 +24,14 @@ export const FONT_GOOGLE_URL =
  * descriptions embed images hosted elsewhere. See app/entry.server.jsx.
  * Leave empty if all images come from Shopify's CDN.
  */
-export const ADDITIONAL_CSP_IMAGE_DOMAINS = [];
+export const ADDITIONAL_CSP_IMAGE_DOMAINS = [
+  // Product descriptions (imported/copy-pasted content) reference images by
+  // the digilog.pk domain rather than cdn.shopify.com, even though they're
+  // served from the same Shopify CDN storage - without this, the browser's
+  // CSP silently blocks them (broken-image icon), even though the URL is
+  // otherwise valid.
+  'https://digilog.pk',
+];
 
 /** Homepage hero banner content. See app/components/sections/HeroBanner.jsx. */
 export const HERO_CONTENT = {
