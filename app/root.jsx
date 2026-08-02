@@ -9,8 +9,7 @@ import {
   ScrollRestoration,
   useRouteLoaderData,
 } from 'react-router';
-import favicon from '~/assets/favicon.svg';
-import logo from '~/assets/logo.png';
+import favicon from '~/assets/favicon.png';
 import {getDesignConfig, DEFAULT_DESIGN_CONFIG} from '~/lib/designConfig';
 import {HEADER_QUERY} from '~/lib/fragments';
 import {SITE_URL} from '~/lib/seo/metadata';
@@ -73,8 +72,8 @@ export function links() {
     // The font stylesheet is rendered dynamically in <Layout> instead of
     // here, since its URL now comes from the design-dashboard-editable
     // config (loader data isn't available in this static links() list).
-    {rel: 'icon', type: 'image/png', href: logo},
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    {rel: 'icon', type: 'image/png', href: favicon},
+    {rel: 'apple-touch-icon', href: favicon},
   ];
 }
 
