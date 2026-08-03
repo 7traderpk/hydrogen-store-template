@@ -27,6 +27,7 @@ import {SpecList} from '~/components/SpecList';
 import {Faq} from '~/components/Faq';
 import {parseJsonMetafield} from '~/lib/seo/metafields';
 import {MAIN_STORE_URL} from '~/brand.config';
+import {BackToTopButton} from '~/components/BackToTopButton';
 
 /**
  * @type {Route.MetaFunction}
@@ -262,6 +263,7 @@ export default function Product() {
           ],
         }}
       />
+      <BackToTopButton />
     </div>
   );
 }

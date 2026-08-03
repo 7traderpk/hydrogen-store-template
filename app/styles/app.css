@@ -253,9 +253,7 @@ button.reset:hover:not(:has(> *)) {
    the classic "account/cart strip above logo/nav/search" e-commerce
    pattern - see header-topbar / header-mainbar below. */
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  position: static;
 }
 
 .header-topbar {
@@ -1636,10 +1634,7 @@ button.reset:hover:not(:has(> *)) {
 */
 .collection-description {
   margin-bottom: 1rem;
-  max-width: 95%;
-  @media (min-width: 45em) {
-    max-width: 600px;
-  }
+  max-width: 100%;
 }
 
 .products-grid {
@@ -2648,4 +2643,28 @@ button[type='submit']:disabled,
 .author-bio-name {
   font-weight: 600;
   margin: 0 0 0.35rem;
+}
+
+.back-to-top {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.back-to-top:hover {
+  background: var(--color-primary-dark);
+  text-decoration: none;
 }
