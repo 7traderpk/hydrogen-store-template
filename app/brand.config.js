@@ -14,6 +14,15 @@ import demoIcon4 from '~/assets/feature-icon-4.png';
 
 export const BRAND_NAME = 'My Store';
 
+/**
+ * If this storefront is a lightweight mirror of a full main site (same
+ * Shopify catalog, so the same product handles resolve on both), the main
+ * site's base URL - shown as a "Main Store" link next to SKU on the
+ * product page, deep-linking to the same product there. Leave null if
+ * this storefront has no separate main-site counterpart.
+ */
+export const MAIN_STORE_URL = 'https://digilog.pk';
+
 /** Google Fonts stylesheet URL loaded in app/root.jsx. */
 export const FONT_GOOGLE_URL =
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap';

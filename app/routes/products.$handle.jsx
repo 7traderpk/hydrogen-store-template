@@ -26,6 +26,7 @@ import {DirectAnswer} from '~/components/DirectAnswer';
 import {SpecList} from '~/components/SpecList';
 import {Faq} from '~/components/Faq';
 import {parseJsonMetafield} from '~/lib/seo/metafields';
+import {MAIN_STORE_URL} from '~/brand.config';
 
 /**
  * @type {Route.MetaFunction}
@@ -211,6 +212,17 @@ export default function Product() {
                 <dt>SKU</dt>
                 <dd className="product-sku">{selectedVariant.sku}</dd>
               </>
+            )}
+            {MAIN_STORE_URL && (
+              <dd className="product-main-store-link">
+                <a
+                  href={`${MAIN_STORE_URL}/products/${product.handle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Main Store
+                </a>
+              </dd>
             )}
           </dl>
           <ProductPrice
