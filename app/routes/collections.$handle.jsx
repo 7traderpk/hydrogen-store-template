@@ -1,8 +1,16 @@
-import {redirect, useLoaderData} from 'react-router';
+import {useState} from 'react';
+import {redirect, useLoaderData, useSearchParams} from 'react-router';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {FilterSidebar} from '~/components/FilterSidebar';
+import {SearchToolbar} from '~/components/SearchToolbar';
+import {
+  getProductFiltersFromParams,
+  getSortFromParams,
+  getViewFromParams,
+} from '~/lib/searchFilters';
 import {hasMultipleVariants} from '~/lib/variants';
 import {buildMeta, SITE_URL} from '~/lib/seo/metadata';
 import {truncate} from '~/lib/seo/text';
@@ -51,8 +59,11 @@ async function loadCriticalData({context, params, request}) {
   const {handle} = params;
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 6,
   });
+  const searchParams = new URL(request.url).searchParams;
+  const filters = getProductFiltersFromParams(searchParams);
+  const sort = getSortFromParams(searchParams);
 
   if (!handle) {
     throw redirect('/collections');
@@ -60,7 +71,13 @@ async function loadCriticalData({context, params, request}) {
 
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
+      variables: {
+        handle,
+        ...paginationVariables,
+        filters: filters.length ? filters : undefined,
+        sortKey: sort.sortKey,
+        reverse: sort.reverse,
+      },
       // Add other queries here, so that they are loaded in parallel
     }),
   ]);
@@ -98,6 +115,8 @@ function loadDeferredData({context}) {
 export default function Collection() {
   /** @type {LoaderReturnData} */
   const {collection} = useLoaderData();
+  const [searchParams] = useSearchParams();
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const collectionUrl = `${SITE_URL}/collections/${collection.handle}`;
   const jsonLd = [
@@ -114,23 +133,62 @@ export default function Collection() {
     ]),
   ];
 
+  const filters = collection.products?.filters || [];
+  const activeFilterCount = searchParams.getAll('filter').length;
+  const sort = getSortFromParams(searchParams);
+  const view = getViewFromParams(searchParams);
+  const currencyCode =
+    collection.products?.nodes?.[0]?.priceRange?.minVariantPrice?.currencyCode;
+
   return (
     <div className="collection">
       <JsonLd data={jsonLd} />
       <h1>{collection.title}</h1>
       <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
+
+      <div className="search-page-layout">
+        <FilterSidebar
+          filters={filters}
+          searchParams={searchParams}
+          currencyCode={currencyCode}
+          isOpen={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+        />
+
+        <div className="search-page-main">
+          <SearchToolbar
+            searchParams={searchParams}
+            sort={sort}
+            view={view}
+            activeFilterCount={activeFilterCount}
+            onOpenFilters={() => setFiltersOpen(true)}
           />
-        )}
-      </PaginatedResourceSection>
+
+          {collection.products?.nodes?.length ? (
+            <PaginatedResourceSection
+              connection={collection.products}
+              resourcesClassName="search-products-grid"
+              resourcesProps={{'data-cols': view}}
+            >
+              {({node: product, index}) => (
+                <ProductItem
+                  key={product.id}
+                  product={product}
+                  loading={index < 6 ? 'eager' : undefined}
+                />
+              )}
+            </PaginatedResourceSection>
+          ) : (
+            <p className="search-no-product-results">
+              No products matched your filters.{' '}
+              <span className="search-no-product-results-hint">
+                Try removing a filter to see more results.
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+
       <Analytics.CollectionView
         data={{
           collection: {
@@ -186,6 +244,9 @@ const COLLECTION_QUERY = `#graphql
     $last: Int
     $startCursor: String
     $endCursor: String
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -200,7 +261,10 @@ const COLLECTION_QUERY = `#graphql
         first: $first,
         last: $last,
         before: $startCursor,
-        after: $endCursor
+        after: $endCursor,
+        filters: $filters,
+        sortKey: $sortKey,
+        reverse: $reverse
       ) {
         nodes {
           ...ProductItem
@@ -210,6 +274,25 @@ const COLLECTION_QUERY = `#graphql
           hasNextPage
           endCursor
           startCursor
+        }
+        filters {
+          id
+          label
+          type
+          values {
+            id
+            label
+            count
+            input
+            swatch {
+              color
+              image {
+                previewImage {
+                  url
+                }
+              }
+            }
+          }
         }
       }
     }

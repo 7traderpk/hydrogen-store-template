@@ -10,6 +10,7 @@ export function PaginatedResourceSection({
   children,
   ariaLabel,
   resourcesClassName,
+  resourcesProps,
 }) {
   return (
     <Pagination connection={connection}>
@@ -34,6 +35,7 @@ export function PaginatedResourceSection({
                 aria-label={ariaLabel}
                 className={resourcesClassName}
                 role={ariaLabel ? 'region' : undefined}
+                {...resourcesProps}
               >
                 {resourcesMarkup}
               </div>
