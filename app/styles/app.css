@@ -249,7 +249,26 @@ button.reset:hover:not(:has(> *)) {
 * components/Header
 * --------------------------------------------------
 */
+/* Two-tier header (thin utility strip + bold branded bar), similar to
+   the classic "account/cart strip above logo/nav/search" e-commerce
+   pattern - see header-topbar / header-mainbar below. */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.header-topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  background: #f7f7f7;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 0.35rem 1rem;
+  font-size: 0.85rem;
+}
+
+.header-mainbar {
   align-items: center;
   background: #fff;
   border-bottom: 3px solid var(--color-primary);
@@ -257,26 +276,15 @@ button.reset:hover:not(:has(> *)) {
   flex-wrap: wrap;
   height: var(--header-height);
   padding: 0 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 /* Below the desktop nav breakpoint, the search bar drops to its own
-   full-width row under the logo/account/cart row. */
+   full-width row under the logo row. */
 @media (max-width: 44.99em) {
-  .header {
+  .header-mainbar {
     height: auto;
     row-gap: 0.5rem;
     padding-bottom: 0.5rem;
-  }
-
-  .header-logo-link {
-    order: 1;
-  }
-
-  .header-ctas {
-    order: 2;
   }
 
   /* .search-bar's own mobile override lives in SearchBar.css, not here -

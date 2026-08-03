@@ -17,21 +17,25 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfi
   });
   return (
     <header className="header">
-      <NavLink className="header-logo-link" prefetch="intent" to="/" end>
-        <img
-          className="header-logo"
-          src={designConfig?.logoUrl || logo}
-          alt={designConfig?.brandName || shop.name}
+      <div className="header-topbar">
+        <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+      </div>
+      <div className="header-mainbar">
+        <NavLink className="header-logo-link" prefetch="intent" to="/" end>
+          <img
+            className="header-logo"
+            src={designConfig?.logoUrl || logo}
+            alt={designConfig?.brandName || shop.name}
+          />
+        </NavLink>
+        <SearchBar categories={searchCategories} />
+        <HeaderMenu
+          menu={menu}
+          viewport="desktop"
+          primaryDomainUrl={header.shop.primaryDomain.url}
+          publicStoreDomain={publicStoreDomain}
         />
-      </NavLink>
-      <SearchBar categories={searchCategories} />
-      <HeaderMenu
-        menu={menu}
-        viewport="desktop"
-        primaryDomainUrl={header.shop.primaryDomain.url}
-        publicStoreDomain={publicStoreDomain}
-      />
-      <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+      </div>
     </header>
   );
 }
