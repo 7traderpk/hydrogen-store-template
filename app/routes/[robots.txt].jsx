@@ -20,10 +20,15 @@ export function loader({request}) {
  */
 function robotsTxtData({url}) {
   const sitemapUrl = url ? `${url}/sitemap.xml` : undefined;
+  // Separate from sitemapUrl above - Hydrogen's built-in sitemap generator
+  // (see [sitemap.xml].jsx) doesn't support the <image:image> extension, so
+  // product images get their own dedicated image sitemap for Google Images
+  // discovery. See [sitemap-images.xml].jsx.
+  const imageSitemapUrl = url ? `${url}/sitemap-images.xml` : undefined;
 
   return `
 User-agent: *
-${generalDisallowRules({sitemapUrl})}
+${generalDisallowRules({sitemapUrl, imageSitemapUrl})}
 
 # AI answer-engine crawlers - explicitly allowed (not just falling under the
 # wildcard above) since this site is deliberately optimized for AI answer
@@ -84,9 +89,9 @@ Crawl-delay: 1
 /**
  * This function generates disallow rules that generally follow what Shopify's
  * Online Store has as defaults for their robots.txt
- * @param {{sitemapUrl?: string}}
+ * @param {{sitemapUrl?: string; imageSitemapUrl?: string}}
  */
-function generalDisallowRules({sitemapUrl}) {
+function generalDisallowRules({sitemapUrl, imageSitemapUrl}) {
   return `Disallow: /cart
 Disallow: /account
 Disallow: /collections/*sort_by*
@@ -108,7 +113,8 @@ Disallow: /policies/
 Disallow: /search
 Allow: /search/
 Disallow: /search/?*
-${sitemapUrl ? `Sitemap: ${sitemapUrl}` : ''}`;
+${sitemapUrl ? `Sitemap: ${sitemapUrl}` : ''}
+${imageSitemapUrl ? `Sitemap: ${imageSitemapUrl}` : ''}`;
 }
 
 /** @typedef {import('./+types/[robots.txt]').Route} Route */

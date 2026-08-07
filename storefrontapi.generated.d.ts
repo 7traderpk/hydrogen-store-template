@@ -428,6 +428,24 @@ export type RssFeedQuery = {
   };
 };
 
+export type SitemapImagesQueryVariables = StorefrontAPI.Exact<{
+  first: StorefrontAPI.Scalars['Int']['input'];
+  after?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
+}>;
+
+export type SitemapImagesQuery = {
+  products: {
+    nodes: Array<
+      Pick<StorefrontAPI.Product, 'handle' | 'title'> & {
+        featuredImage?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Image, 'url' | 'altText'>
+        >;
+      }
+    >;
+    pageInfo: Pick<StorefrontAPI.PageInfo, 'hasNextPage' | 'endCursor'>;
+  };
+};
+
 export type FeaturedProductFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle'
@@ -1696,6 +1714,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query RssFeed(\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    blogs(first: 10) {\n      nodes {\n        handle\n        articles(first: 20, sortKey: UPDATED_AT, reverse: true) {\n          nodes {\n            title\n            handle\n            publishedAt\n            excerpt\n            contentHtml\n            authorV2 {\n              name\n            }\n            blog {\n              handle\n            }\n            image {\n              url\n              altText\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: RssFeedQuery;
     variables: RssFeedQueryVariables;
+  };
+  '#graphql\n  query SitemapImages($first: Int!, $after: String) {\n    products(first: $first, after: $after) {\n      nodes {\n        handle\n        title\n        featuredImage {\n          url\n          altText\n        }\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n': {
+    return: SitemapImagesQuery;
+    variables: SitemapImagesQueryVariables;
   };
   '#graphql\n  fragment FeaturedProduct on Product {\n    id\n    title\n    handle\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    variants(first: 2) {\n      nodes {\n        id\n      }\n    }\n  }\n  query FeaturedProducts($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 12, sortKey: BEST_SELLING) {\n      nodes {\n        ...FeaturedProduct\n      }\n    }\n  }\n': {
     return: FeaturedProductsQuery;
