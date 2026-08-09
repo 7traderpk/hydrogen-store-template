@@ -2,6 +2,7 @@ import {useLoaderData, data} from 'react-router';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildMeta} from '~/lib/seo/metadata';
+import {isSafeRedirectPath} from '~/lib/redirect';
 
 /**
  * @type {Route.MetaFunction}
@@ -80,7 +81,12 @@ export async function action({request, context}) {
   const {cart: cartResult, errors, warnings} = result;
 
   const redirectTo = formData.get('redirectTo') ?? null;
-  if (typeof redirectTo === 'string') {
+  // `redirectTo` is a hidden form field the client sets to "stay on the
+  // current page" after a cart mutation - a POST from anywhere else
+  // (e.g. a form on an attacker's own page targeting this endpoint) could
+  // set it to an external URL, phishing via a trusted lite.digilog.pk
+  // redirect. Only same-origin relative paths are honored.
+  if (isSafeRedirectPath(redirectTo)) {
     status = 303;
     headers.set('Location', redirectTo);
   }

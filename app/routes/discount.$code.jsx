@@ -1,4 +1,5 @@
 import {redirect} from 'react-router';
+import {isSafeRedirectPath} from '~/lib/redirect';
 
 /**
  * Automatically applies a discount found on the url
@@ -21,8 +22,10 @@ export async function loader({request, context, params}) {
   let redirectParam =
     searchParams.get('redirect') || searchParams.get('return_to') || '/';
 
-  if (redirectParam.includes('//')) {
-    // Avoid redirecting to external URLs to prevent phishing attacks
+  if (!isSafeRedirectPath(redirectParam)) {
+    // Avoid redirecting to external URLs to prevent phishing attacks -
+    // includes backslash tricks (e.g. `/\evil.com`), which a bare
+    // `.includes('//')` check doesn't catch (see isSafeRedirectPath).
     redirectParam = '/';
   }
 
