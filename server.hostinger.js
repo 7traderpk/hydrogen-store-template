@@ -117,6 +117,28 @@ function readFile(filePath) {
   });
 }
 
+// Applied here rather than in entry.server.jsx (where the CSP is set) so
+// every response gets them uniformly - static assets below, and resource
+// routes like [robots.txt].jsx/[sitemap.xml].jsx that return a Response
+// directly from their own loader, never touch entry.server.jsx at all.
+function applySecurityHeaders(response) {
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains; preload',
+  );
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=()',
+  );
+  response.headers.set('X-Frame-Options', 'DENY');
+  // Hydrogen sets this itself; strip it so the exact framework/version
+  // isn't advertised to every visitor.
+  response.headers.delete('powered-by');
+  return response;
+}
+
 const app = createServerAdapter(async (request) => {
   const url = new URL(request.url);
 
@@ -124,12 +146,14 @@ const app = createServerAdapter(async (request) => {
     const filePath = join(clientDir, url.pathname);
     if (existsSync(filePath) && statSync(filePath).isFile()) {
       const body = await readFile(filePath);
-      return new Response(body, {
-        headers: {
-          'Content-Type': MIME_TYPES[extname(filePath)] || 'application/octet-stream',
-          'Cache-Control': 'public, max-age=31536000, immutable',
-        },
-      });
+      return applySecurityHeaders(
+        new Response(body, {
+          headers: {
+            'Content-Type': MIME_TYPES[extname(filePath)] || 'application/octet-stream',
+            'Cache-Control': 'public, max-age=31536000, immutable',
+          },
+        }),
+      );
     }
   }
 
@@ -140,7 +164,8 @@ const app = createServerAdapter(async (request) => {
     passThroughOnException: () => {},
   };
 
-  return worker.fetch(request, env, executionContext);
+  const response = await worker.fetch(request, env, executionContext);
+  return applySecurityHeaders(response);
 });
 
 const port = process.env.PORT || 3000;
