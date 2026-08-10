@@ -35,6 +35,11 @@ export function AddToCartButton({
           >
             {children}
           </button>
+          {fetcher.data?.errors?.length ? (
+            <p className="add-to-cart-error" role="alert">
+              {fetcher.data.errors.map((error) => error.message).join(' ')}
+            </p>
+          ) : null}
         </>
       )}
     </CartForm>

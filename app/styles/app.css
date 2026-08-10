@@ -1915,6 +1915,13 @@ button.reset:hover:not(:has(> *)) {
   margin-top: 0.75rem;
 }
 
+.product-quantity-rule-hint {
+  flex-basis: 100%;
+  margin: -0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #767676;
+}
+
 .quantity-selector {
   display: flex;
   align-items: stretch;
@@ -2667,4 +2674,11 @@ button[type='submit']:disabled,
 .back-to-top:hover {
   background: var(--color-primary-dark);
   text-decoration: none;
+}
+
+.add-to-cart-error,
+.cart-line-quantity-error {
+  color: #c00;
+  font-size: 0.85rem;
+  margin: 0.35rem 0 0;
 }

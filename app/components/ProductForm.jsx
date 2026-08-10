@@ -7,12 +7,15 @@ import {useAside} from './Aside';
  * @param {{
  *   productOptions: MappedProductOptions[];
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+ *   quantityRule?: {min?: number; max?: number; multiple?: number} | null;
  * }}
  */
-export function ProductForm({productOptions, selectedVariant}) {
+export function ProductForm({productOptions, selectedVariant, quantityRule}) {
   const navigate = useNavigate();
   const {open} = useAside();
-  const [quantity, setQuantity] = useState(1);
+  const step = quantityRule?.multiple || 1;
+  const minQuantity = quantityRule?.min || 1;
+  const [quantity, setQuantity] = useState(minQuantity);
   return (
     <div className="product-form">
       {productOptions.map((option) => {
@@ -100,31 +103,54 @@ export function ProductForm({productOptions, selectedVariant}) {
           <button
             type="button"
             className="quantity-selector-btn"
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            onClick={() =>
+              setQuantity((q) => Math.max(minQuantity, q - step))
+            }
             aria-label="Decrease quantity"
           >
             −
           </button>
           <input
             type="number"
-            min="1"
+            min={minQuantity}
+            max={quantityRule?.max || undefined}
+            step={step}
             className="quantity-selector-input"
             value={quantity}
             onChange={(e) => {
               const next = parseInt(e.target.value, 10);
-              setQuantity(Number.isFinite(next) && next > 0 ? next : 1);
+              setQuantity(
+                Number.isFinite(next) && next > 0 ? next : minQuantity,
+              );
             }}
             aria-label="Quantity"
           />
           <button
             type="button"
             className="quantity-selector-btn"
-            onClick={() => setQuantity((q) => q + 1)}
+            onClick={() =>
+              setQuantity((q) =>
+                quantityRule?.max ? Math.min(quantityRule.max, q + step) : q + step,
+              )
+            }
             aria-label="Increase quantity"
           >
             +
           </button>
         </div>
+        {quantityRule ? (
+          <p className="product-quantity-rule-hint">
+            {[
+              quantityRule.min ? `Min ${quantityRule.min}` : null,
+              quantityRule.max ? `Max ${quantityRule.max}` : null,
+              quantityRule.multiple
+                ? `multiples of ${quantityRule.multiple}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        ) : null}
         <AddToCartButton
           disabled={!selectedVariant || !selectedVariant.availableForSale}
           onClick={() => {

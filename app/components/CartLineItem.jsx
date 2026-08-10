@@ -137,8 +137,28 @@ function CartLineQuantity({line}) {
           </button>
         </CartLineUpdateButton>
       </div>
+      <CartLineQuantityError lineId={lineId} />
       <CartLineRemoveButton lineIds={[lineId]} disabled={!!isOptimistic} />
     </div>
+  );
+}
+
+/**
+ * Surfaces a quantity-limit rejection from the server for this specific
+ * line - the +/- buttons and the typed quantity input all share one
+ * fetcher (see getUpdateKey), so whichever control the shopper used, its
+ * result shows up here.
+ * @param {{lineId: string}}
+ */
+function CartLineQuantityError({lineId}) {
+  const fetcher = useFetcher({key: getUpdateKey([lineId])});
+  const errors = fetcher.data?.errors;
+  if (!errors?.length) return null;
+
+  return (
+    <p className="cart-line-quantity-error" role="alert">
+      {errors.map((error) => error.message).join(' ')}
+    </p>
   );
 }
 

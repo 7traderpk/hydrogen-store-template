@@ -3,6 +3,8 @@ import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildMeta} from '~/lib/seo/metadata';
 import {isSafeRedirectPath} from '~/lib/redirect';
+import {getQuantityLimits} from '~/lib/quantityLimits';
+import {validateQuantityAgainstRule} from '~/lib/cartLimits';
 
 /**
  * @type {Route.MetaFunction}
@@ -13,6 +15,113 @@ export const meta = () => buildMeta({title: 'Cart', robots: 'noindex,nofollow'})
  * @type {HeadersFunction}
  */
 export const headers = ({actionHeaders}) => actionHeaders;
+
+/**
+ * Product-level min/max/multiple purchase limits (see
+ * app/lib/quantityLimits.js) aren't enforced by Shopify itself - they only
+ * exist as this storefront's own rule data, so they have to be checked
+ * here before a line mutation is allowed through, not just reflected in
+ * the quantity selector's UI. `quantity` passed to the validator is always
+ * the *resulting* total for that line (existing + requested for an add,
+ * since cartLinesAdd merges into an existing line rather than creating a
+ * second one; the requested value directly for an update, since that sets
+ * the absolute quantity).
+ *
+ * A cart line (CartLine) has no top-level merchandiseId/handle - only a
+ * nested `merchandise { ... on ProductVariant { id product { handle } } }` -
+ * and this codebase's LinesUpdate submissions (see CartLineItem) send only
+ * `{id, quantity}`, no merchandiseId at all. So the handle for an update is
+ * resolved from the *existing* cart line by its line id; the handle for an
+ * add is resolved the same way when that merchandiseId is already in the
+ * cart (a quantity bump), falling back to a direct variant lookup only for
+ * a genuinely new line.
+ * @param {{
+ *   context: Route.ActionArgs['context'];
+ *   cartAction: string;
+ *   lines: Array<{id?: string; merchandiseId?: string; quantity: number}>;
+ * }}
+ * @returns {Promise<{message: string}[]>}
+ */
+async function findQuantityLimitErrors({context, cartAction, lines}) {
+  if (
+    (cartAction !== CartForm.ACTIONS.LinesAdd &&
+      cartAction !== CartForm.ACTIONS.LinesUpdate) ||
+    !lines?.length
+  ) {
+    return [];
+  }
+
+  const limits = await getQuantityLimits(context.storefront);
+  if (!Object.keys(limits).length) return [];
+
+  const existingCart = await context.cart.get();
+  const existingLines = existingCart?.lines?.nodes ?? [];
+
+  const handleByLineId = new Map(
+    existingLines.map((line) => [line.id, line.merchandise?.product?.handle]),
+  );
+  const handleByMerchandiseId = new Map(
+    existingLines.map((line) => [
+      line.merchandise?.id,
+      line.merchandise?.product?.handle,
+    ]),
+  );
+  const qtyByMerchandiseId = new Map(
+    existingLines.map((line) => [line.merchandise?.id, line.quantity]),
+  );
+
+  // Only genuinely new lines (add-to-cart for a product not already in the
+  // cart) need an extra lookup - everything else is resolvable from the
+  // cart we already fetched above.
+  const unresolvedMerchandiseIds = lines
+    .filter(
+      (line) =>
+        cartAction === CartForm.ACTIONS.LinesAdd &&
+        line.merchandiseId &&
+        !handleByMerchandiseId.has(line.merchandiseId),
+    )
+    .map((line) => line.merchandiseId);
+
+  if (unresolvedMerchandiseIds.length) {
+    const {nodes} = await context.storefront.query(
+      VARIANT_PRODUCT_HANDLES_QUERY,
+      {variables: {ids: unresolvedMerchandiseIds}},
+    );
+    for (const node of nodes) {
+      if (node?.product?.handle) handleByMerchandiseId.set(node.id, node.product.handle);
+    }
+  }
+
+  const errors = [];
+  for (const line of lines) {
+    const handle =
+      cartAction === CartForm.ACTIONS.LinesUpdate
+        ? handleByLineId.get(line.id)
+        : handleByMerchandiseId.get(line.merchandiseId);
+    const rule = handle && limits[handle];
+    if (!rule) continue;
+
+    const resultingQuantity =
+      cartAction === CartForm.ACTIONS.LinesAdd
+        ? (qtyByMerchandiseId.get(line.merchandiseId) ?? 0) + line.quantity
+        : line.quantity;
+
+    const check = validateQuantityAgainstRule(resultingQuantity, rule);
+    if (!check.valid) errors.push({message: check.message});
+  }
+  return errors;
+}
+
+const VARIANT_PRODUCT_HANDLES_QUERY = `#graphql
+  query VariantProductHandles($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on ProductVariant {
+        id
+        product { handle }
+      }
+    }
+  }
+`;
 
 /**
  * @param {Route.ActionArgs}
@@ -30,6 +139,24 @@ export async function action({request, context}) {
 
   let status = 200;
   let result;
+
+  const quantityLimitErrors = await findQuantityLimitErrors({
+    context,
+    cartAction: action,
+    lines: inputs.lines,
+  });
+  if (quantityLimitErrors.length) {
+    const currentCart = await cart.get();
+    return data(
+      {
+        cart: currentCart,
+        errors: quantityLimitErrors,
+        warnings: [],
+        analytics: {cartId: currentCart?.id},
+      },
+      {status: 200},
+    );
+  }
 
   switch (action) {
     case CartForm.ACTIONS.LinesAdd:

@@ -387,6 +387,16 @@ export type FooterQuery = {
   >;
 };
 
+export type QuantityLimitsQueryVariables = StorefrontAPI.Exact<{
+  [key: string]: never;
+}>;
+
+export type QuantityLimitsQuery = {
+  shop: {
+    metafield?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  };
+};
+
 export type LlmsTxtCollectionsQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -778,6 +788,22 @@ export type BlogsQuery = {
       }
     >;
   };
+};
+
+export type VariantProductHandlesQueryVariables = StorefrontAPI.Exact<{
+  ids:
+    | Array<StorefrontAPI.Scalars['ID']['input']>
+    | StorefrontAPI.Scalars['ID']['input'];
+}>;
+
+export type VariantProductHandlesQuery = {
+  nodes: Array<
+    StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.ProductVariant, 'id'> & {
+        product: Pick<StorefrontAPI.Product, 'handle'>;
+      }
+    >
+  >;
 };
 
 export type MoneyProductItemFragment = Pick<
@@ -1707,6 +1733,10 @@ interface GeneratedQueryTypes {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };
+  '#graphql\n  query QuantityLimits {\n    shop {\n      metafield(namespace: "lite_storefront", key: "quantity_limits") {\n        value\n      }\n    }\n  }\n': {
+    return: QuantityLimitsQuery;
+    variables: QuantityLimitsQueryVariables;
+  };
   '#graphql\n  query LlmsTxtCollections($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collections(first: 10) {\n      nodes {\n        title\n        handle\n      }\n    }\n  }\n': {
     return: LlmsTxtCollectionsQuery;
     variables: LlmsTxtCollectionsQueryVariables;
@@ -1758,6 +1788,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Blogs(\n    $country: CountryCode\n    $endCursor: String\n    $first: Int\n    $language: LanguageCode\n    $last: Int\n    $startCursor: String\n  ) @inContext(country: $country, language: $language) {\n    blogs(\n      first: $first,\n      last: $last,\n      before: $startCursor,\n      after: $endCursor\n    ) {\n      pageInfo {\n        hasNextPage\n        hasPreviousPage\n        startCursor\n        endCursor\n      }\n      nodes {\n        title\n        handle\n        seo {\n          title\n          description\n        }\n      }\n    }\n  }\n': {
     return: BlogsQuery;
     variables: BlogsQueryVariables;
+  };
+  '#graphql\n  query VariantProductHandles($ids: [ID!]!) {\n    nodes(ids: $ids) {\n      ... on ProductVariant {\n        id\n        product { handle }\n      }\n    }\n  }\n': {
+    return: VariantProductHandlesQuery;
+    variables: VariantProductHandlesQueryVariables;
   };
   '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n    variants(first: 2) {\n      nodes {\n        id\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      seo {\n        title\n        description\n      }\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n            swatch {\n              color\n              image {\n                previewImage {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
