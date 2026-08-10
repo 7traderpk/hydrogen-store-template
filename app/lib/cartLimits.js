@@ -1,6 +1,8 @@
 /**
  * Validates a resulting cart-line quantity against a product's min/max/
- * multiple rule (see app/lib/quantityLimits.js). Pure - no I/O - so it's
+ * multiple rule (a per-product metafield, lite_storefront.quantity_limit -
+ * see app/routes/products.$handle.jsx and app/routes/cart.jsx for where
+ * it's fetched). Pure - no I/O - so it's
  * usable both server-side (app/routes/cart.jsx, the enforcement that
  * actually matters) and client-side (product page quantity selector, for
  * immediate feedback before a request even goes out).

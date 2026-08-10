@@ -3,7 +3,7 @@ import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import {buildMeta} from '~/lib/seo/metadata';
 import {isSafeRedirectPath} from '~/lib/redirect';
-import {getQuantityLimits} from '~/lib/quantityLimits';
+import {parseJsonMetafield} from '~/lib/seo/metafields';
 import {validateQuantityAgainstRule} from '~/lib/cartLimits';
 
 /**
@@ -17,21 +17,27 @@ export const meta = () => buildMeta({title: 'Cart', robots: 'noindex,nofollow'})
 export const headers = ({actionHeaders}) => actionHeaders;
 
 /**
- * Product-level min/max/multiple purchase limits (see
- * app/lib/quantityLimits.js) aren't enforced by Shopify itself - they only
- * exist as this storefront's own rule data, so they have to be checked
- * here before a line mutation is allowed through, not just reflected in
- * the quantity selector's UI. `quantity` passed to the validator is always
- * the *resulting* total for that line (existing + requested for an add,
- * since cartLinesAdd merges into an existing line rather than creating a
- * second one; the requested value directly for an update, since that sets
- * the absolute quantity).
+ * Product-level min/max/multiple purchase limits live directly on each
+ * product as its own metafield (lite_storefront.quantity_limit) - not a
+ * single shop-wide list keyed by handle, which would be one giant blob to
+ * hand-maintain and one typo'd/renamed handle away from silently applying
+ * to the wrong product or nothing at all. A per-product metafield travels
+ * with the product itself (immune to handle changes) and is editable
+ * right on that product's own admin page.
  *
- * A cart line (CartLine) has no top-level merchandiseId/handle - only a
- * nested `merchandise { ... on ProductVariant { id product { handle } } }` -
- * and this codebase's LinesUpdate submissions (see CartLineItem) send only
- * `{id, quantity}`, no merchandiseId at all. So the handle for an update is
- * resolved from the *existing* cart line by its line id; the handle for an
+ * Shopify doesn't enforce these - they're purely this storefront's own
+ * rule data - so they have to be checked here before a line mutation is
+ * allowed through, not just reflected in the quantity selector's UI.
+ * `quantity` passed to the validator is always the *resulting* total for
+ * that line (existing + requested for an add, since cartLinesAdd merges
+ * into an existing line rather than creating a second one; the requested
+ * value directly for an update, since that sets the absolute quantity).
+ *
+ * A cart line (CartLine) has no top-level merchandiseId - only a nested
+ * `merchandise { ... on ProductVariant { id product { ... } } }` - and
+ * this codebase's LinesUpdate submissions (see CartLineItem) send only
+ * `{id, quantity}`, no merchandiseId at all. So the rule for an update is
+ * resolved from the *existing* cart line by its line id; the rule for an
  * add is resolved the same way when that merchandiseId is already in the
  * cart (a quantity bump), falling back to a direct variant lookup only for
  * a genuinely new line.
@@ -51,19 +57,19 @@ async function findQuantityLimitErrors({context, cartAction, lines}) {
     return [];
   }
 
-  const limits = await getQuantityLimits(context.storefront);
-  if (!Object.keys(limits).length) return [];
-
   const existingCart = await context.cart.get();
   const existingLines = existingCart?.lines?.nodes ?? [];
 
-  const handleByLineId = new Map(
-    existingLines.map((line) => [line.id, line.merchandise?.product?.handle]),
+  const ruleByLineId = new Map(
+    existingLines.map((line) => [
+      line.id,
+      parseJsonMetafield(line.merchandise?.product?.quantityLimit),
+    ]),
   );
-  const handleByMerchandiseId = new Map(
+  const ruleByMerchandiseId = new Map(
     existingLines.map((line) => [
       line.merchandise?.id,
-      line.merchandise?.product?.handle,
+      parseJsonMetafield(line.merchandise?.product?.quantityLimit),
     ]),
   );
   const qtyByMerchandiseId = new Map(
@@ -78,27 +84,28 @@ async function findQuantityLimitErrors({context, cartAction, lines}) {
       (line) =>
         cartAction === CartForm.ACTIONS.LinesAdd &&
         line.merchandiseId &&
-        !handleByMerchandiseId.has(line.merchandiseId),
+        !ruleByMerchandiseId.has(line.merchandiseId),
     )
     .map((line) => line.merchandiseId);
 
   if (unresolvedMerchandiseIds.length) {
     const {nodes} = await context.storefront.query(
-      VARIANT_PRODUCT_HANDLES_QUERY,
+      VARIANT_QUANTITY_LIMIT_QUERY,
       {variables: {ids: unresolvedMerchandiseIds}},
     );
     for (const node of nodes) {
-      if (node?.product?.handle) handleByMerchandiseId.set(node.id, node.product.handle);
+      if (node?.id) {
+        ruleByMerchandiseId.set(node.id, parseJsonMetafield(node.product?.quantityLimit));
+      }
     }
   }
 
   const errors = [];
   for (const line of lines) {
-    const handle =
+    const rule =
       cartAction === CartForm.ACTIONS.LinesUpdate
-        ? handleByLineId.get(line.id)
-        : handleByMerchandiseId.get(line.merchandiseId);
-    const rule = handle && limits[handle];
+        ? ruleByLineId.get(line.id)
+        : ruleByMerchandiseId.get(line.merchandiseId);
     if (!rule) continue;
 
     const resultingQuantity =
@@ -112,12 +119,16 @@ async function findQuantityLimitErrors({context, cartAction, lines}) {
   return errors;
 }
 
-const VARIANT_PRODUCT_HANDLES_QUERY = `#graphql
-  query VariantProductHandles($ids: [ID!]!) {
+const VARIANT_QUANTITY_LIMIT_QUERY = `#graphql
+  query VariantQuantityLimit($ids: [ID!]!) {
     nodes(ids: $ids) {
       ... on ProductVariant {
         id
-        product { handle }
+        product {
+          quantityLimit: metafield(namespace: "lite_storefront", key: "quantity_limit") {
+            value
+          }
+        }
       }
     }
   }

@@ -47,6 +47,9 @@ export const CART_QUERY_FRAGMENT = `#graphql
           title
           id
           vendor
+          quantityLimit: metafield(namespace: "lite_storefront", key: "quantity_limit") {
+            value
+          }
         }
         selectedOptions {
           name

@@ -28,7 +28,6 @@ import {Faq} from '~/components/Faq';
 import {parseJsonMetafield} from '~/lib/seo/metafields';
 import {MAIN_STORE_URL} from '~/brand.config';
 import {BackToTopButton} from '~/components/BackToTopButton';
-import {getQuantityLimits} from '~/lib/quantityLimits';
 
 /**
  * @type {Route.MetaFunction}
@@ -74,11 +73,10 @@ async function loadCriticalData({context, params, request}) {
     throw new Error('Expected product handle to be defined');
   }
 
-  const [{product}, quantityLimits] = await Promise.all([
+  const [{product}] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
-    getQuantityLimits(storefront),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
@@ -107,7 +105,6 @@ async function loadCriticalData({context, params, request}) {
   return {
     product,
     initialWishlisted,
-    quantityRule: quantityLimits[handle] ?? null,
   };
 }
 
@@ -135,7 +132,7 @@ function loadDeferredData({context, params}) {
 
 export default function Product() {
   /** @type {LoaderReturnData} */
-  const {product, relatedProducts, initialWishlisted, quantityRule} = useLoaderData();
+  const {product, relatedProducts, initialWishlisted} = useLoaderData();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -156,8 +153,11 @@ export default function Product() {
   const {title, descriptionHtml} = product;
 
   // Metafields arrive in PRODUCT_FRAGMENT identifier order:
-  // [short_answer, faqs, specs] (null when unset in Shopify admin).
-  const [shortAnswerMetafield, faqsMetafield, specsMetafield] = product.metafields ?? [];
+  // [short_answer, faqs, specs, quantity_limit] (null when unset in
+  // Shopify admin).
+  const [shortAnswerMetafield, faqsMetafield, specsMetafield, quantityLimitMetafield] =
+    product.metafields ?? [];
+  const quantityRule = parseJsonMetafield(quantityLimitMetafield);
   const directAnswerText =
     shortAnswerMetafield?.value ||
     product.seo?.description ||
@@ -401,6 +401,7 @@ const PRODUCT_FRAGMENT = `#graphql
         {namespace: "custom", key: "short_answer"}
         {namespace: "custom", key: "faqs"}
         {namespace: "custom", key: "specs"}
+        {namespace: "lite_storefront", key: "quantity_limit"}
       ]
     ) {
       value
