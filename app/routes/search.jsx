@@ -127,7 +127,7 @@ export default function SearchPage() {
         <SearchResults.Empty term={term} />
       ) : (
         <SearchResults result={result} term={term}>
-          {({articles, pages, products, term}) => (
+          {({products, term}) => (
             <div className="search-page-layout">
               <FilterSidebar
                 filters={productFilters}
@@ -158,9 +158,6 @@ export default function SearchPage() {
                     totalCount={totalProductCount}
                   />
                 </div>
-
-                <SearchResults.Pages pages={pages} term={term} />
-                <SearchResults.Articles articles={articles} term={term} />
               </div>
             </div>
           )}
@@ -280,26 +277,6 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
   }
 `;
 
-const SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment SearchPage on Page {
-     __typename
-     handle
-    id
-    title
-    trackingParameters
-  }
-`;
-
-const SEARCH_ARTICLE_FRAGMENT = `#graphql
-  fragment SearchArticle on Article {
-    __typename
-    handle
-    id
-    title
-    trackingParameters
-  }
-`;
-
 const PAGE_INFO_FRAGMENT = `#graphql
   fragment PageInfoFragment on PageInfo {
     hasNextPage
@@ -323,28 +300,6 @@ export const SEARCH_QUERY = `#graphql
     $sortKey: SearchSortKeys
     $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
-    articles: search(
-      query: $term,
-      types: [ARTICLE],
-      first: 5,
-    ) {
-      nodes {
-        ...on Article {
-          ...SearchArticle
-        }
-      }
-    }
-    pages: search(
-      query: $term,
-      types: [PAGE],
-      first: 5,
-    ) {
-      nodes {
-        ...on Page {
-          ...SearchPage
-        }
-      }
-    }
     products: search(
       after: $endCursor,
       before: $startCursor,
@@ -388,8 +343,6 @@ export const SEARCH_QUERY = `#graphql
     }
   }
   ${SEARCH_PRODUCT_FRAGMENT}
-  ${SEARCH_PAGE_FRAGMENT}
-  ${SEARCH_ARTICLE_FRAGMENT}
   ${PAGE_INFO_FRAGMENT}
 `;
 
@@ -447,25 +400,6 @@ async function regularSearch({request, context}) {
  * Predictive search query and fragments
  * (adjust as needed)
  */
-const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
-  fragment PredictiveArticle on Article {
-    __typename
-    id
-    title
-    handle
-    blog {
-      handle
-    }
-    image {
-      url
-      altText
-      width
-      height
-    }
-    trackingParameters
-  }
-`;
-
 const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
   fragment PredictiveCollection on Collection {
     __typename
@@ -478,16 +412,6 @@ const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
       width
       height
     }
-    trackingParameters
-  }
-`;
-
-const PREDICTIVE_SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment PredictivePage on Page {
-    __typename
-    id
-    title
-    handle
     trackingParameters
   }
 `;
@@ -549,14 +473,8 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       query: $term,
       types: $types,
     ) {
-      articles {
-        ...PredictiveArticle
-      }
       collections {
         ...PredictiveCollection
-      }
-      pages {
-        ...PredictivePage
       }
       products {
         ...PredictiveProduct
@@ -566,9 +484,7 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       }
     }
   }
-  ${PREDICTIVE_SEARCH_ARTICLE_FRAGMENT}
   ${PREDICTIVE_SEARCH_COLLECTION_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PAGE_FRAGMENT}
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;

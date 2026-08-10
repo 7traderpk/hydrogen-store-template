@@ -44,9 +44,7 @@ export function SearchResultsPredictive({children}) {
   });
 }
 
-SearchResultsPredictive.Articles = SearchResultsPredictiveArticles;
 SearchResultsPredictive.Collections = SearchResultsPredictiveCollections;
-SearchResultsPredictive.Pages = SearchResultsPredictivePages;
 SearchResultsPredictive.Products = SearchResultsPredictiveProducts;
 SearchResultsPredictive.Queries = SearchResultsPredictiveQueries;
 SearchResultsPredictive.Empty = SearchResultsPredictiveEmpty;
@@ -54,43 +52,6 @@ SearchResultsPredictive.Empty = SearchResultsPredictiveEmpty;
 /**
  * @param {PartialPredictiveSearchResult<'articles'>}
  */
-function SearchResultsPredictiveArticles({term, articles, closeSearch}) {
-  if (!articles.length) return null;
-
-  return (
-    <div className="predictive-search-result" key="articles">
-      <h5>Articles</h5>
-      <ul>
-        {articles.map((article) => {
-          const articleUrl = urlWithTrackingParams({
-            baseUrl: `/blogs/${article.blog.handle}/${article.handle}`,
-            trackingParams: article.trackingParameters,
-            term: term.current ?? '',
-          });
-
-          return (
-            <li className="predictive-search-result-item" key={article.id}>
-              <Link onClick={closeSearch} to={articleUrl}>
-                {article.image?.url && (
-                  <Image
-                    alt={article.image.altText ?? ''}
-                    src={article.image.url}
-                    width={50}
-                    height={50}
-                  />
-                )}
-                <div>
-                  <span>{article.title}</span>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
 /**
  * @param {PartialPredictiveSearchResult<'collections'>}
  */
@@ -134,35 +95,6 @@ function SearchResultsPredictiveCollections({term, collections, closeSearch}) {
 /**
  * @param {PartialPredictiveSearchResult<'pages'>}
  */
-function SearchResultsPredictivePages({term, pages, closeSearch}) {
-  if (!pages.length) return null;
-
-  return (
-    <div className="predictive-search-result" key="pages">
-      <h5>Pages</h5>
-      <ul>
-        {pages.map((page) => {
-          const pageUrl = urlWithTrackingParams({
-            baseUrl: `/pages/${page.handle}`,
-            trackingParams: page.trackingParameters,
-            term: term.current,
-          });
-
-          return (
-            <li className="predictive-search-result-item" key={page.id}>
-              <Link onClick={closeSearch} to={pageUrl}>
-                <div>
-                  <span>{page.title}</span>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
 /**
  * @param {PartialPredictiveSearchResult<'products'>}
  */
