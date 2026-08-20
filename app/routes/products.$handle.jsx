@@ -173,6 +173,14 @@ export default function Product() {
     firstSentence(stripHtml(product.description));
 
   const productUrl = `${SITE_URL}/products/${product.handle}`;
+  const category = product.collections?.nodes?.[0];
+  const breadcrumbTrail = [
+    {name: 'Home', url: SITE_URL},
+    ...(category
+      ? [{name: category.title, url: `${SITE_URL}/collections/${category.handle}`}]
+      : []),
+    {name: product.title, url: productUrl},
+  ];
   const jsonLd = [
     productSchema({
       title: product.title,
@@ -186,15 +194,31 @@ export default function Product() {
       priceCurrency: selectedVariant?.price?.currencyCode,
       availableForSale: Boolean(selectedVariant?.availableForSale),
     }),
-    breadcrumbList([
-      {name: 'Home', url: SITE_URL},
-      {name: product.title, url: productUrl},
-    ]),
+    breadcrumbList(breadcrumbTrail),
   ];
 
   return (
     <div className="product-page">
       <JsonLd data={jsonLd} />
+      <nav className="product-breadcrumb" aria-label="Breadcrumb">
+        {breadcrumbTrail.map((crumb, index) => {
+          const isLast = index === breadcrumbTrail.length - 1;
+          return (
+            <span key={crumb.url}>
+              {index > 0 && (
+                <span className="product-breadcrumb-sep" aria-hidden="true">
+                  &rsaquo;
+                </span>
+              )}
+              {isLast ? (
+                <span className="product-breadcrumb-current">{crumb.name}</span>
+              ) : (
+                <a href={crumb.url.replace(SITE_URL, '') || '/'}>{crumb.name}</a>
+              )}
+            </span>
+          );
+        })}
+      </nav>
       <div className="product">
         <ProductGallery
           images={product.images?.nodes}
@@ -366,6 +390,12 @@ const PRODUCT_FRAGMENT = `#graphql
     description
     encodedVariantExistence
     encodedVariantAvailability
+    collections(first: 1) {
+      nodes {
+        title
+        handle
+      }
+    }
     variants(first: 2) {
       nodes {
         id

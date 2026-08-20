@@ -11,9 +11,9 @@
 export const DEFAULT_DESIGN_CONFIG = {
   brandName: 'My Store',
   colors: {
-    primary: '#2563eb',
-    primaryDark: '#1d4ed8',
-    accent: '#3b82f6',
+    primary: '#e53e3e',
+    primaryDark: '#c53030',
+    accent: '#f56565',
   },
   fontGoogleUrl:
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap',

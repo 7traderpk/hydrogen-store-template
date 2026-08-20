@@ -17,9 +17,6 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfi
   });
   return (
     <header className="header">
-      <div className="header-topbar">
-        <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
-      </div>
       <div className="header-mainbar">
         <NavLink className="header-logo-link" prefetch="intent" to="/" end>
           <img
@@ -29,6 +26,9 @@ export function Header({header, isLoggedIn, cart, publicStoreDomain, designConfi
           />
         </NavLink>
         <SearchBar categories={searchCategories} />
+        <HeaderCtas isLoggedIn={isLoggedIn} cart={cart} />
+      </div>
+      <div className="header-navbar">
         <HeaderMenu
           menu={menu}
           viewport="desktop"
