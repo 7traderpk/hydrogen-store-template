@@ -170,6 +170,18 @@ export function ProductForm({productOptions, selectedVariant, quantityRule}) {
         >
           {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
         </AddToCartButton>
+        {selectedVariant?.availableForSale && (
+          // /cart/<variant_id>:<quantity> (routes/cart.$lines.jsx) creates a
+          // fresh cart with just this line and redirects straight to
+          // checkout - a real Hydrogen skeleton route already in this repo,
+          // not new backend logic.
+          <a
+            className="product-form-buy-now"
+            href={`/cart/${selectedVariant.id.split('/').pop()}:${quantity}`}
+          >
+            Buy Now
+          </a>
+        )}
       </div>
     </div>
   );

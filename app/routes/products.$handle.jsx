@@ -23,6 +23,7 @@ import {JsonLd} from '~/components/seo/JsonLd';
 import {product as productSchema} from '~/lib/seo/schema/product';
 import {breadcrumbList} from '~/lib/seo/schema/breadcrumbList';
 import {DirectAnswer} from '~/components/DirectAnswer';
+import {ProductUsps} from '~/components/ProductUsps';
 import {SpecList} from '~/components/SpecList';
 import {Faq} from '~/components/Faq';
 import {parseJsonMetafield} from '~/lib/seo/metafields';
@@ -158,6 +159,14 @@ export default function Product() {
   const [shortAnswerMetafield, faqsMetafield, specsMetafield, quantityLimitMetafield] =
     product.metafields ?? [];
   const quantityRule = parseJsonMetafield(quantityLimitMetafield);
+
+  const comparePrice = selectedVariant?.compareAtPrice?.amount;
+  const currentPrice = selectedVariant?.price?.amount;
+  const saleBadge =
+    comparePrice && currentPrice && Number(comparePrice) > Number(currentPrice)
+      ? `${Math.round((1 - Number(currentPrice) / Number(comparePrice)) * 100)}% OFF`
+      : null;
+
   const directAnswerText =
     shortAnswerMetafield?.value ||
     product.seo?.description ||
@@ -191,6 +200,7 @@ export default function Product() {
           images={product.images?.nodes}
           selectedImage={selectedVariant?.image}
           productTitle={product.title}
+          saleBadge={saleBadge}
         />
         <div className="product-main">
           <div className="product-title-row">
@@ -238,6 +248,7 @@ export default function Product() {
             selectedVariant={selectedVariant}
             quantityRule={quantityRule}
           />
+          <ProductUsps />
           <DirectAnswer text={directAnswerText} />
         </div>
       </div>

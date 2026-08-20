@@ -6,9 +6,10 @@ import {Image} from '@shopify/hydrogen';
  *   images: Array<{id: string; url: string; altText: string | null; width: number; height: number}>;
  *   selectedImage?: {id: string} | null;
  *   productTitle?: string;
+ *   saleBadge?: string | null;
  * }}
  */
-export function ProductGallery({images, selectedImage, productTitle}) {
+export function ProductGallery({images, selectedImage, productTitle, saleBadge}) {
   const allImages = images?.length ? images : selectedImage ? [selectedImage] : [];
   const [activeId, setActiveId] = useState(selectedImage?.id || allImages[0]?.id);
 
@@ -35,6 +36,9 @@ export function ProductGallery({images, selectedImage, productTitle}) {
           key={activeImage.id}
           sizes="(min-width: 45em) 50vw, 100vw"
         />
+        {saleBadge && (
+          <span className="product-gallery-sale-badge">{saleBadge}</span>
+        )}
       </div>
       {allImages.length > 1 && (
         <div className="product-gallery-thumbs">
