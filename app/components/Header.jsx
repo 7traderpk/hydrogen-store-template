@@ -256,7 +256,8 @@ function HeaderCtas({isLoggedIn, cart}) {
   return (
     <nav className="header-ctas" role="navigation">
       <HeaderMenuMobileToggle />
-      <NavLink prefetch="intent" to="/account" style={activeLinkStyle}>
+      <NavLink prefetch="intent" to="/account" className="header-cta-link">
+        <span aria-hidden="true">👤</span>
         <Suspense fallback="Sign in">
           <Await resolve={isLoggedIn} errorElement="Sign in">
             {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign in')}
@@ -289,6 +290,7 @@ function CartBadge({count}) {
 
   return (
     <a
+      className="header-cta-link"
       href="/cart"
       onClick={(e) => {
         e.preventDefault();
@@ -301,7 +303,13 @@ function CartBadge({count}) {
         });
       }}
     >
-      Cart <span aria-label={`(items: ${count})`}>{count}</span>
+      <span aria-hidden="true">🛒</span>
+      Cart
+      {count > 0 && (
+        <span className="header-cart-count" aria-label={`${count} items in cart`}>
+          {count}
+        </span>
+      )}
     </a>
   );
 }
