@@ -51,6 +51,25 @@ if (!globalThis.caches) {
   };
 }
 
+// Node's fetch (undici) requires `duplex: 'half'` in RequestInit whenever a
+// request has a body - a restriction that doesn't exist in the Cloudflare
+// Workers runtime Hydrogen targets natively. Without this, Hydrogen's
+// built-in Storefront API proxy (used for direct browser->Shopify
+// cart/checkout calls, see the bundled `forward()` helper in
+// dist/server/index.js) throws `TypeError: RequestInit: duplex option is
+// required when sending a body` on every POST, leaking the un-drained
+// incoming request body stream on each failure. That leak is what was
+// driving heap usage toward 1.3GB+ over a few days despite ~1 req/min
+// average traffic.
+const nativeFetch = globalThis.fetch;
+function patchedFetch(input, init) {
+  if (init && init.body && init.duplex === undefined) {
+    init = {...init, duplex: 'half'};
+  }
+  return nativeFetch(input, init);
+}
+globalThis.fetch = patchedFetch;
+
 const {default: worker} = await import('./dist/server/index.js');
 
 const env = {
@@ -140,6 +159,29 @@ function applySecurityHeaders(response) {
 }
 
 const app = createServerAdapter(async (request) => {
+  // Traefik terminates TLS and forwards to this app over plain HTTP
+  // internally (confirmed: it sends `x-forwarded-proto: https` on every
+  // real request), so request.url's scheme is always "http:" here even
+  // though every real visitor is on https://. Hydrogen's own sitemap
+  // generator (getSitemapIndex, in @shopify/hydrogen) builds every URL
+  // straight from `new URL(request.url).origin`, so left uncorrected this
+  // produced an entire sitemap of http:// URLs - confirmed in Google
+  // Search Console as the single largest reason pages weren't indexed
+  // ("Page with redirect", ~3,400 pages: Google followed each http://
+  // sitemap URL to its https redirect but wouldn't index the mid-redirect
+  // URL itself). Rebuilding the request with the corrected scheme here
+  // fixes this at the source for the sitemap and anything else in the
+  // app that reads request.url, not just one route.
+  if (request.headers.get('x-forwarded-proto') === 'https' && request.url.startsWith('http://')) {
+    const httpsUrl = 'https://' + request.url.slice('http://'.length);
+    const init = {method: request.method, headers: request.headers};
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      init.body = request.body;
+      init.duplex = 'half';
+    }
+    request = new Request(httpsUrl, init);
+  }
+
   const url = new URL(request.url);
 
   if (url.pathname.startsWith('/assets/') || url.pathname === '/favicon.svg') {

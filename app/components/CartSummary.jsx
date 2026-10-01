@@ -2,6 +2,7 @@ import {CartForm, Money} from '@shopify/hydrogen';
 import {useId} from 'react';
 import {Link} from 'react-router';
 import {useAside} from './Aside';
+import {appendUtmParams} from '~/lib/utm';
 
 /**
  * @param {CartSummaryProps}
@@ -52,7 +53,11 @@ function CartCheckoutActions({checkoutUrl, layout}) {
           View Cart
         </Link>
       )}
-      <a href={checkoutUrl} target="_self" className="checkout-btn">
+      <a
+        href={appendUtmParams(checkoutUrl)}
+        target="_self"
+        className="checkout-btn"
+      >
         Continue to Checkout &rarr;
       </a>
     </div>

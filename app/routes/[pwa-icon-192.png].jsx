@@ -1,0 +1,26 @@
+/**
+ * Serves the 192x192 PWA icon (see [manifest.webmanifest].jsx).
+ * Embedded as base64 rather than read from disk with node:fs - this app
+ * builds to a Workers-style bundle (see server.hostinger.js's polyfills
+ * for exactly why), and Node's fs module isn't guaranteed available in
+ * that target. A ~3KB embedded string works identically
+ * regardless of runtime, at the cost of a slightly larger bundle.
+ * Generated once by a one-off script (padded the site's wordmark logo
+ * onto a #2563eb square background) - not regenerated per-request.
+ *
+ * @param {Route.LoaderArgs}
+ */
+export function loader() {
+  const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAH50lEQVR4Ae3BX2id9R3H8ff59rRpbW008QnVaq3VX9dluBZlOChhw7F/zEOnzBtlIDw7vVzxwl3M3exiV15sdwOPDytFZKMgyMFtF0OQzIJ0jsFwy/rbbM10S/OY1tTWpmmbjFwciGf5c5Kc5DnJ9/N6lUKaTyPilCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHimCHiWJkCje8ZpDRdgmmjhMG0wXSJ0nSJVpSmNrNtbD92YxvzGd8zSLPu4QHmc/nOP7EUpeky20cOMZ/xPYM06x4eoGF8zyDNuocHaJcb28aYuO0srdp+/iClqc206lr3+1y/JWcpto19jk2Tt9IJyhRo9OAJ2inUazQbPXiCZt3DA8x2ffso5x59npXqOfMdev/xXWYbPXiCZt3DAzSMHjxBs+7hAVYqVqqsVKjXmE+sVGmHUK9RJGMDiZUqy3Hu0edphwv7X+fG1osULVaqtEOsVJlLrFRpl1ipUiTDuVip0k5nv/4jihQrVdop/8Jv2MiMDWbkoReR9vl43x+Y7cMv/4J2u9L3V4pSpsOEeo1WxUqVZp/sPs2uPx9lpUK9xkax942fsflKH4sZefhFPrnrNAv5NHmXuYR6jfXIWMdCvUa7dY3fTajX2Eg2X+mjFbveOcpyhHqN9cqQz7jj799jI9n578PI/AwRx8pIS2KlSqtCvYZ3sVKlVT3x2/QOPUERDJGiTW2iKIbIKgj1Gq0qTZUpiiEtCfUasjpK00ZRykjLQr1Gs1ipInML9RrNru38gOGv/JROYciKbJrYibSuNLWJTmLIZ4w++DJLcXPrJTrZpXveopOMfvFlOomxjsVKlWbbLjzASlzf/hGxUqUVsVJlPbh4/+9oxb++eYzliJUqrbjaG7nae4Zmmz/toyhlOlSsVFmOXe8cpR1ipUpRYqVKq7aN7efuU8+xkI/6X+Wj/ldph1s//BKf7D5Ns1ipslw7Rh6iKMYGU564nSKVbpbZSJJ3n2S2XX8+SttNlyiK4Vyo12inB377S5Zi++iDtFOo12in2977Bqtp68V7KZLRoUK9xlLckn+eUK+xHKFeox1CvcZS3fX2DylNGe0U6jXaIdRrzCXUa7TD5k/v4J4//oQilUKaTyPilCHimCHiWJkOELOEVoU0R6RdjILFLEGkKEaBJkZPI1KkMgWa/DgyW0hzWhWzhIaQ5iwkZgmtCGnOjOuX3uPcyUdYTEhzZsQsoRUhzZkRs4RWhTSn4YPXj3B15BSLCWlOQ8wSGjZt7WXf00M0i1lCQ0hzZsQsYUZIcxpilrCYkOY0fPD6Ea6OnGIhm7b2su/pIYpiyP85d/IROsV/3/gBDVdHTtGKmCXM5ebEGDFLWI6YJbQiZgkNV0dOsZibE2NMTY5TlDId5MaV/3Dz2sfMpaunn5UKac5ShTRnMSHNWa6Q5swlZgkzLp99DXiJ2e782q/YsfcxmsUsYS2ENGepQprTicp0kPL2uzj764PMZcvtB7j3iUHWUkhzliNmCQ0hzWm3HXsfYy477jvC5bOvMZeQ5sQsYUbMEkKas1a23H6ATlVmnZi8OEQ7xCyhWUhzPNi0tZebE2PMiFlCSHPWwuTFIWKWMFv3gWfoO/wCRSvTYUKac+3C35jL1OQ4tqWbleg+8AzjQ8eZLWYJIc0pwvuvDjB5cYi1sO/pIWKW0BCzhJDmrJbd3zrJh79/krmMDx1nfOg4M0KaUxSjA3X19NPV009XTz9dPf109fTT1dOPbelmpfoOv0AnufeJQRYS0px2CmnObNcvvcdquWX3Vwlpzp7H32THfUfoRGUcCmnOehGzhJDmtFNIc2KWMOPcyUdYbV09/dz56EvASzRcOvMK5wePMePSmVfYuf8pilCmg8QsYTEhzVkrMUsIac5qC2lOs5glzGf0refoO/wCzS6ffY314vzgMRq67jhEUcoUaOf+pzg/eIyVilnCXEKaM1vMEhYS0pxmMUuYT0hzijA+dJzxoeOsREhzYpbQqp5Dz3LhLz9nRswSFhLSnBkxS2hFV08/RTEKdv/3/8lyhDSnVXuffJulCGnOYvY8/iZrLaQ5i+k59CwhzWlFSHNa1fvwj9lx3xEWE9KchpDmLCakOUUqhTSfRsQpQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8QxQ8Sx/wH6qN0FLmQXkwAAAABJRU5ErkJggg==';
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+  return new Response(bytes, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  });
+}
+
+/** @typedef {import('./+types/[pwa-icon-192.png]').Route} Route */

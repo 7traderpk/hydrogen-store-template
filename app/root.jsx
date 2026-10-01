@@ -166,6 +166,23 @@ export function Layout({children}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        {/* Installable PWA support: manifest served by
+            app/routes/[manifest.webmanifest].jsx, icons by the matching
+            [pwa-icon-*.png].jsx routes. theme-color uses the same
+            design-dashboard-editable primary color as the rest of the
+            site; the manifest's own theme_color/icons are static (baked
+            in when the icons were generated) - regenerate both together
+            if the brand color changes. */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content={colors.primary} />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        {/* A short name on purpose, not the shared `brandName` variable -
+            the shop's Shopify "store name" field is set to a long
+            SEO-keyword phrase (used for page <title>s), which would look
+            wrong truncated under a home-screen icon. Matches the
+            manifest's own short_name. */}
+        <meta name="apple-mobile-web-app-title" content="Digilog" />
         <link rel="stylesheet" href={tailwindCss}></link>
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
@@ -199,6 +216,15 @@ export function Layout({children}) {
         {children}
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
+        {/* Registered after load, not blocking - see
+            app/routes/[service-worker.js].jsx for what it actually caches
+            (build assets only, never product/cart/checkout data). */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/service-worker.js')})}`,
+          }}
+        />
       </body>
     </html>
   );
